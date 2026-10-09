@@ -14,8 +14,8 @@ public interface OtpChallengeRepository {
     /** Loads the challenge and locks its row, so concurrent attempts wait and each one sees the attempts left. */
     Optional<OtpChallenge> findByIdForUpdate(UUID id);
 
-    /** Whether a code was issued for this email after {@code since}. */
-    boolean existsIssuedAfter(Email email, Instant since);
+    /** The challenge that was issued for this email last, if any is left. */
+    Optional<OtpChallenge> findLatestByEmail(Email email);
 
     OtpChallenge save(OtpChallenge challenge);
 

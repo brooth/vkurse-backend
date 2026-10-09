@@ -6,6 +6,7 @@
 package space.vkurse.platform.auth.infrastructure;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 import space.vkurse.core.persistence.JpaAggregateRepository;
@@ -21,14 +22,14 @@ class JpaOtpChallengeRepository extends JpaAggregateRepository<OtpChallenge> imp
     }
 
     @Override
-    public boolean existsIssuedAfter(Email email, Instant since) {
-        var count = em.createQuery(
-                        "SELECT COUNT(c) FROM OtpChallenge c WHERE c.email = :email AND c.createdAt > :since",
-                        Long.class)
+    public Optional<OtpChallenge> findLatestByEmail(Email email) {
+        return em.createQuery(
+                        "SELECT c FROM OtpChallenge c WHERE c.email = :email ORDER BY c.createdAt DESC",
+                        OtpChallenge.class)
                 .setParameter("email", email)
-                .setParameter("since", since)
-                .getSingleResult();
-        return count > 0;
+                .setMaxResults(1)
+                .getResultStream()
+                .findFirst();
     }
 
     @Override

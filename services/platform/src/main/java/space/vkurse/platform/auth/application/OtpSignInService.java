@@ -22,7 +22,6 @@ import space.vkurse.core.notification.NotificationService;
 import space.vkurse.core.notification.Target;
 import space.vkurse.platform.auth.domain.AuthErrors.OtpExpiredException;
 import space.vkurse.platform.auth.domain.AuthErrors.OtpIncorrectException;
-import space.vkurse.platform.auth.domain.AuthErrors.OtpTooFrequentException;
 import space.vkurse.platform.auth.domain.OtpChallenge;
 import space.vkurse.platform.auth.domain.OtpChallengeRepository;
 import space.vkurse.platform.auth.domain.SecretHasher;
@@ -68,10 +67,8 @@ public class OtpSignInService {
         var code = hasher.randomDigits(OtpChallenge.CODE_LENGTH);
         var challenge = Objects.requireNonNull(transaction.execute(status -> {
             var now = clock.instant();
-            if (challenges.existsIssuedAfter(email, now.minus(OtpChallenge.RESEND_AFTER))) {
-                throw new OtpTooFrequentException();
-            }
-            return challenges.save(OtpChallenge.issue(email, hash(email, code), now));
+            challenges.findLatestByEmail(email).ifPresent(latest -> latest.ensureResendAllowed(now));
+            return challenges.save(OtpChallenge.issue(email, code, hasher, now));
         }));
         try {
             // Sent at once, never submitted: the user is waiting, and a stored message would keep the code.
@@ -96,7 +93,7 @@ public class OtpSignInService {
     public Identity signIn(UUID token, String code, @Nullable String userAgent) {
         var challenge = challenges.findByIdForUpdate(token).orElseThrow(OtpExpiredException::new);
         try {
-            challenge.verify(hash(challenge.getEmail(), code.trim()), clock.instant());
+            challenge.verify(code, hasher, clock.instant());
         } catch (OtpIncorrectException e) {
             challenges.save(challenge);
             throw e;
@@ -104,11 +101,6 @@ public class OtpSignInService {
         challenges.remove(challenge);
         var user = users.findOrRegister(challenge.getEmail(), null, null);
         return signIn.signIn(user, SignInProvider.OTP, userAgent);
-    }
-
-    /** The code is hashed together with its email, so a hash is useless for any other address. */
-    private String hash(Email email, String code) {
-        return hasher.hash(email.value() + ":" + code);
     }
 
     /** What the client gets for a sent code: {@code token} identifies it when signing in. */

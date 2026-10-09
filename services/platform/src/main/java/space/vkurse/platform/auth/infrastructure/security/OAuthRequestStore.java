@@ -41,8 +41,7 @@ class OAuthRequestStore implements AuthorizationRequestRepository<OAuth2Authoriz
             return null;
         }
         return requests.find(state)
-                .filter(requests::isLive)
-                .map(OAuthRequestStore::toSpring)
+                .map(pending -> toSpring(state, pending.getRequest()))
                 .orElse(null);
     }
 
@@ -69,12 +68,12 @@ class OAuthRequestStore implements AuthorizationRequestRepository<OAuth2Authoriz
         if (state == null) {
             return null;
         }
-        var pending = requests.take(state);
-        if (pending.isEmpty()) {
+        var taken = requests.take(state).orElse(null);
+        if (taken == null) {
             return null;
         }
-        request.setAttribute(CALLBACK_ATTRIBUTE, pending.get().getCallback().value());
-        return pending.filter(requests::isLive).map(OAuthRequestStore::toSpring).orElse(null);
+        request.setAttribute(CALLBACK_ATTRIBUTE, taken.callback().value());
+        return taken.request() == null ? null : toSpring(state, taken.request());
     }
 
     private static PendingOAuthRequest.AuthorizationRequest fromSpring(OAuth2AuthorizationRequest request) {
@@ -88,14 +87,13 @@ class OAuthRequestStore implements AuthorizationRequestRepository<OAuth2Authoriz
                 request.getAuthorizationRequestUri());
     }
 
-    private static OAuth2AuthorizationRequest toSpring(PendingOAuthRequest pending) {
-        var request = pending.getRequest();
+    private static OAuth2AuthorizationRequest toSpring(String state, PendingOAuthRequest.AuthorizationRequest request) {
         return OAuth2AuthorizationRequest.authorizationCode()
                 .authorizationUri(request.authorizationUri())
                 .clientId(request.clientId())
                 .redirectUri(request.redirectUri())
                 .scopes(request.scopes())
-                .state(pending.getState())
+                .state(state)
                 .additionalParameters(request.additionalParameters())
                 .attributes(request.attributes())
                 .authorizationRequestUri(request.authorizationRequestUri())

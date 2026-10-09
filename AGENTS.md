@@ -100,18 +100,43 @@ space/vkurse/platform/course/
 
 | Layer | May use |
 |---|---|
-| `domain` | `libs/core`, other modules' `domain`. No Spring beans, no `EntityManager`, no HTTP types |
+| `domain` | `libs/core`, other modules' `domain`. No Spring beans, no injection, no `EntityManager`, no HTTP types |
 | `application` | its `domain`, other modules' `application` |
 | `infrastructure` | everything in its module |
 | `web` | `application`, and `domain` types to read from |
 
 `domain`, `application` and `web` of a module that others use are `@NamedInterface`s; `infrastructure` is never used from outside.
 
+### Where a rule goes
+The model is rich: **a rule lives in `domain`, in the type that owns the data it decides on.** An application service has no rules of its own: it loads, asks the domain, and saves.
+
+| The rule is about | It goes in |
+|---|---|
+| One aggregate's state: expiry, limits, transitions, defaults | A method or the factory of that aggregate: `session.rotate(…)`, `User.register(…)` |
+| A value on its own: its format, when it may be used | A value object: `Email`, `CallbackUrl`, `ProviderAccount.verifiedEmail()` |
+| Other rows of the same kind: a resend limit, a quota | The service loads them with a named repository method, and the aggregate decides: `latest.ensureResendAllowed(now)` |
+| Two aggregates, or an aggregate and a value | The service loads both and passes one to the other's method or factory: `LinkedAccount.link(userId, account, now)` |
+| Something a port computes in memory: a hash | The aggregate method takes the port as a parameter: `challenge.verify(code, hasher, now)`. Never a port that does I/O |
+
+What an application service keeps:
+- the transaction, loading and saving, and the order of the steps;
+- the ownership check (`belongsTo(userId)`), and "not found";
+- calls to ports that do I/O (mail, tokens, payments), and what to do when they fail;
+- technical handling: a retry after a unique-index race, a log line;
+- turning an aggregate's answer into an exception, when the state must be saved before throwing (`Session.Rotation`).
+
+Move the code into `domain` when you see any of these in a service or a controller:
+- It reads a getter, compares it, and then throws or calls a method. Call one method that does both.
+- It does arithmetic with a domain constant (`now.minus(OtpChallenge.RESEND_AFTER)`).
+- It builds something the aggregate stores: a hash format, a default name, a trimmed value.
+- A javadoc says "the caller checks …". Make the method check, or return only what may be used.
+- A record that describes a domain thing is declared in `application` or `web`.
+
 ### Aggregates
 - An aggregate extends `AggregateRoot` and is a JPA `@Entity` with a plural table name: `@Table(name = "courses")`. Class names have **no** `Entity` suffix: `Course`, `User`, `Session`.
 - **No setters.** Lombok `@Getter` only (Lombok is for aggregates only). State changes through methods named for what happens: `course.publish(now)`, `session.revoke(now)`, `user.changeProfile(…)`.
 - **Created by a static factory** named for the event (`User.register(…)`, `Session.start(…)`), which calls a private constructor that calls `super(now)`. Add a `protected` no-arg constructor for Hibernate.
-- **Rules live in the aggregate**, not in a service: expiry, attempt limits, state transitions, what may change. If a service reads a field, decides, and writes a field, move that into a method.
+- **Rules live in the aggregate**, not in a service: expiry, attempt limits, state transitions, what may change (see [Where a rule goes](#where-a-rule-goes)).
 - **Time is a parameter** (`Instant now`): an aggregate never calls a clock. The application service passes `clock.instant()`.
 - A rule the client broke throws a `ClientException` from `libs/core` (`BadRequestException`, or the module's own in `{Module}Errors`). A programming mistake throws `IllegalArgumentException`/`IllegalStateException`.
 - An aggregate raises events with `raise(new CoursePublished(getId()))`. They are published when it is saved, in the same transaction.
@@ -165,7 +190,7 @@ A value with rules of its own is a record that can't exist in an invalid state: 
 - Bulk statements are for cleanup of rows nobody holds (`deleteExpired(now)`).
 
 ### Application services
-- A use case is a short method: load, call the aggregate, save. `@Transactional` goes here.
+- A use case is a short method: load, call the aggregate, save. `@Transactional` goes here. It makes no business decision ([Where a rule goes](#where-a-rule-goes)).
 - **Ownership is explicit.** A call on behalf of a user takes the caller's `userId` and reaches only their data: `sessions.revoke(session.userId(), id)`. A missing or foreign row is the same `NotFoundException`.
 - Outside systems (mail, tokens, payment providers) are **ports**: an interface in `domain`, an implementation in `infrastructure`. Don't call a slow outside system inside a database transaction.
 - Scheduled jobs and event listeners are application-layer classes.

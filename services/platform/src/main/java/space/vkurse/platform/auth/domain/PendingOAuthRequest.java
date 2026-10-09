@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -57,6 +58,11 @@ public class PendingOAuthRequest extends AggregateRoot {
 
     public boolean isLive(Instant now) {
         return now.isBefore(expiresAt);
+    }
+
+    /** What to continue the sign-in with when the provider redirects back; nothing once this has expired. */
+    public Optional<AuthorizationRequest> redeem(Instant now) {
+        return isLive(now) ? Optional.of(request) : Optional.empty();
     }
 
     /**

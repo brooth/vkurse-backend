@@ -35,19 +35,27 @@ public class OAuthRequestService {
         requests.save(PendingOAuthRequest.start(state, request, allowed, clock.instant()));
     }
 
+    /** The pending sign-in with this {@code state}, unless it has expired. */
     @Transactional(readOnly = true)
     public Optional<PendingOAuthRequest> find(String state) {
-        return requests.findByState(state);
+        var now = clock.instant();
+        return requests.findByState(state).filter(request -> request.isLive(now));
     }
 
-    /** Takes a pending sign-in out: it is used once. The caller checks {@link #isLive}. */
-    public Optional<PendingOAuthRequest> take(String state) {
-        var request = requests.findByState(state);
-        request.ifPresent(requests::remove);
-        return request;
+    /** Takes a pending sign-in out: it is used once, expired or not. */
+    public Optional<Taken> take(String state) {
+        var now = clock.instant();
+        return requests.findByState(state).map(pending -> {
+            requests.remove(pending);
+            return new Taken(pending.getCallback(), pending.redeem(now).orElse(null));
+        });
     }
 
-    public boolean isLive(PendingOAuthRequest request) {
-        return request.isLive(clock.instant());
-    }
+    /**
+     * A pending sign-in that was taken out.
+     *
+     * @param callback where to send the browser, whether the sign-in goes on or not
+     * @param request what to continue with, or {@code null} if the sign-in had expired
+     */
+    public record Taken(CallbackUrl callback, PendingOAuthRequest.@Nullable AuthorizationRequest request) {}
 }

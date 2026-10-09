@@ -4,7 +4,7 @@ How to bring a module from a NestJS + Firestore codebase (the source style this 
 
 **Port behavior, not code.** Understand what the source module does, then write it the Vkurse way. A line-by-line translation of TypeScript gives Java that fights the framework, and carries over the source's bugs.
 
-**The source is anemic; Vkurse is not.** A source entity is a bag of fields, and its rules are spread over the service and its hooks, on top of a generic CRUD base (`findOne`, `updateById`, `preHook`). Vkurse has no such base. Find the rules, and give them to an aggregate as methods (`session.rotate(…)`, `otp.verify(…)`); the service that remains only loads, calls and saves.
+**The source is anemic; Vkurse is not.** A source entity is a bag of fields, and its rules are spread over the service and its hooks, on top of a generic CRUD base (`findOne`, `updateById`, `preHook`). Vkurse has no such base. Find the rules, and give them to an aggregate as methods (`session.rotate(…)`, `otp.verify(…)`); the service that remains only loads, calls and saves. AGENTS.md, "Where a rule goes", says which type gets a rule that involves other rows, another aggregate or a port.
 
 ---
 

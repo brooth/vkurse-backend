@@ -44,11 +44,8 @@ public class LinkedAccount extends AggregateRoot {
         this.email = email;
     }
 
-    public static LinkedAccount link(
-            UUID userId, SignInProvider provider, String subject, @Nullable String email, Instant now) {
-        if (!provider.isExternal()) {
-            throw new IllegalArgumentException("Only an external provider's account can be linked, not " + provider);
-        }
-        return new LinkedAccount(userId, provider, subject, email, now);
+    /** Links a provider account to the user it belongs to, so the next sign-in with it finds that user. */
+    public static LinkedAccount link(UUID userId, ProviderAccount account, Instant now) {
+        return new LinkedAccount(userId, account.provider(), account.subject(), account.email(), now);
     }
 }

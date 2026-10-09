@@ -5,15 +5,15 @@
 | Layer | File | Description |
 |---|---|---|
 | `domain` | `Session` | A signed-in device: `start`, `rotate` (refresh), `issueExchangeCode` / `redeemExchangeCode`, `revoke`, `isLive` |
-| | `OtpChallenge` | An emailed code: `issue`, `verify` (expiry, attempts, constant-time compare) |
-| | `LinkedAccount` | A Google or Apple account of a user, keyed by the provider's `sub` |
-| | `PendingOAuthRequest`, `CallbackUrl` | A sign-in that is at the provider; the allowlisted frontend URL it returns to |
+| | `OtpChallenge` | An emailed code: `issue` (hashes the code), `ensureResendAllowed`, `verify` (expiry, attempts, constant-time compare) |
+| | `LinkedAccount`, `ProviderAccount` | A Google or Apple account of a user, keyed by the provider's `sub`; what the provider said about the person (`verifiedEmail`) |
+| | `PendingOAuthRequest`, `CallbackUrl` | A sign-in that is at the provider (`redeem` gives nothing once expired); the allowlisted frontend URL it returns to |
 | | `SignInProvider`, `AuthErrors` | `OTP` / `GOOGLE` / `APPLE`; the module's client errors |
 | | `…Repository`, `TokenIssuer`, `SecretHasher` | Repository interfaces and ports |
 | `application` | `SignInService` | Sign-in, OAuth exchange codes, refresh-token rotation |
 | | `OtpSignInService` | Send a code, sign in with it |
 | | `OAuthSignInService` | Find or sign up the user behind a provider account |
-| | `OAuthRequestService` | Keeps pending OAuth sign-ins |
+| | `OAuthRequestService` | Keeps pending OAuth sign-ins: `find` returns only a live one, `take` removes it |
 | | `SessionService` | The caller's devices: list, revoke one, revoke others |
 | | `UserDeletedListener`, `AuthCleanupJob` | Ends a deleted user's access; hourly removal of expired rows |
 | `infrastructure` | `Jpa…Repository` | Database access |
@@ -77,7 +77,7 @@ The email is the `otp-code` template, sent with `NotificationService.send` from 
 `oauth2Login` (Spring Security OAuth2 Client) under `/auth/oauth`; the registrations are in `application.yaml`.
 
 1. `GET /auth/oauth/{provider}?callback=<frontend URL>`. `CallbackUrl` accepts only an http(s) URL on an origin in `VKURSE_WEB_ORIGINS`. The request is stored in `auth_oauth_requests` (10 minutes), not in the HTTP session, so any node can finish it.
-2. The provider redirects back. `OAuthLoginHandler` reads the id token and `OAuthSignInService` finds the user: by linked account (`provider` + `sub`), else by email, but only an email the provider marks verified. A new link is stored.
+2. The provider redirects back. `OAuthLoginHandler` reads the id token and `OAuthSignInService` finds the user: by linked account (`provider` + `sub`), else by email, but only an email the provider marks verified (`ProviderAccount.verifiedEmail`). A new link is stored.
 3. A session is started with a one-time exchange code (60 seconds), and the browser is redirected to `callback?code=…`. Tokens never appear in a URL.
 4. The frontend calls `POST /auth/exchange`.
 

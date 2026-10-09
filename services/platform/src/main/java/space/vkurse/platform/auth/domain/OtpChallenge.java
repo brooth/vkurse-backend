@@ -17,6 +17,7 @@ import space.vkurse.core.domain.AggregateRoot;
 import space.vkurse.platform.auth.domain.AuthErrors.OtpAttemptsExceededException;
 import space.vkurse.platform.auth.domain.AuthErrors.OtpExpiredException;
 import space.vkurse.platform.auth.domain.AuthErrors.OtpIncorrectException;
+import space.vkurse.platform.auth.domain.AuthErrors.OtpTooFrequentException;
 import space.vkurse.platform.user.domain.Email;
 
 /**
@@ -52,8 +53,20 @@ public class OtpChallenge extends AggregateRoot {
         this.expiresAt = now.plus(TTL);
     }
 
-    public static OtpChallenge issue(Email email, String codeHash, Instant now) {
-        return new OtpChallenge(email, codeHash, now);
+    /** Issues a challenge for {@code code}, which the caller emails. Only the code's hash is kept. */
+    public static OtpChallenge issue(Email email, String code, SecretHasher hasher, Instant now) {
+        return new OtpChallenge(email, hash(email, code, hasher), now);
+    }
+
+    /**
+     * Checks that a new code may be sent to the email of this challenge, the latest one sent to it.
+     *
+     * @throws OtpTooFrequentException this code was sent less than {@link #RESEND_AFTER} ago
+     */
+    public void ensureResendAllowed(Instant now) {
+        if (now.isBefore(getCreatedAt().plus(RESEND_AFTER))) {
+            throw new OtpTooFrequentException();
+        }
     }
 
     /**
@@ -63,18 +76,24 @@ public class OtpChallenge extends AggregateRoot {
      * @throws OtpAttemptsExceededException no attempts are left
      * @throws OtpIncorrectException the code is wrong
      */
-    public void verify(String presentedCodeHash, Instant now) {
+    public void verify(String presentedCode, SecretHasher hasher, Instant now) {
         if (!now.isBefore(expiresAt)) {
             throw new OtpExpiredException();
         }
         if (attemptsLeft <= 0) {
             throw new OtpAttemptsExceededException();
         }
+        var presentedCodeHash = hash(email, presentedCode.trim(), hasher);
         var matches = MessageDigest.isEqual(
                 codeHash.getBytes(StandardCharsets.UTF_8), presentedCodeHash.getBytes(StandardCharsets.UTF_8));
         if (!matches) {
             attemptsLeft--;
             throw new OtpIncorrectException(attemptsLeft);
         }
+    }
+
+    /** The code is hashed together with its email, so a hash is useless for any other address. */
+    private static String hash(Email email, String code, SecretHasher hasher) {
+        return hasher.hash(email.value() + ":" + code);
     }
 }

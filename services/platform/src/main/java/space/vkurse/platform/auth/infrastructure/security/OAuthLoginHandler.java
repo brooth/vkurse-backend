@@ -31,7 +31,7 @@ import space.vkurse.core.error.Errors.ClientException;
 import space.vkurse.core.error.Errors.NotFoundException;
 import space.vkurse.core.error.Errors.ServerException;
 import space.vkurse.platform.auth.application.OAuthSignInService;
-import space.vkurse.platform.auth.application.OAuthSignInService.ProviderAccount;
+import space.vkurse.platform.auth.domain.ProviderAccount;
 import space.vkurse.platform.auth.domain.SignInProvider;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
