@@ -1,6 +1,6 @@
 # M4: Storage
 
-> Files in Supabase Storage, uploaded and downloaded with signed links, in the `storage` module of `services/platform`. Its first users are the school logo, the user's own picture and a school's file library. Designed fresh: there is no NestJS source for it. How it works is in the [module README](../../services/platform/src/main/java/space/vkurse/platform/storage/README.md).
+> Files in Supabase Storage, uploaded and downloaded with signed links, in the `storage` module of `services/platform`. Its first users are the school logo, the user's own picture and a school's file library. Designed fresh: there is no NestJS source for it. How it works is in the [module README](../../services/platform/src/main/java/vkurse/platform/storage/README.md).
 
 ## Scope
 

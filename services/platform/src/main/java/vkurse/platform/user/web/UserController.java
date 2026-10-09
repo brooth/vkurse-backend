@@ -1,0 +1,46 @@
+/*
+ * Copyright (C) vkurse.space - All Rights Reserved
+ * Unauthorized copying of this file, via any medium is strictly prohibited
+ * Proprietary and confidential
+ */
+package vkurse.platform.user.web;
+
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import vkurse.core.security.GetSession;
+import vkurse.core.security.UserSession;
+import vkurse.platform.user.application.UserService;
+
+/** The caller's own profile. */
+@RestController
+@RequestMapping("/users/me")
+class UserController {
+    private final UserService users;
+
+    UserController(UserService users) {
+        this.users = users;
+    }
+
+    @GetMapping
+    UserResponse getMe(@GetSession UserSession session) {
+        return UserResponse.of(users.getMe(session.userId()));
+    }
+
+    @PatchMapping
+    UserResponse updateMe(@GetSession UserSession session, @Valid @RequestBody UpdateProfileRequest data) {
+        return UserResponse.of(users.updateMe(session.userId(), data.name(), data.locale(), data.timezone()));
+    }
+
+    /** Deletes the account. Its sessions and linked sign-in accounts are deleted with it. */
+    @DeleteMapping
+    ResponseEntity<Void> deleteMe(@GetSession UserSession session) {
+        users.deleteMe(session.userId());
+        return ResponseEntity.noContent().build();
+    }
+}

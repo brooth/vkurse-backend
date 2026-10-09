@@ -39,7 +39,7 @@ The rules are in [AGENTS.md](../AGENTS.md); this is the outline.
 ```
 backend/
 ├── libs/core/                   # errors, validation, AggregateRoot, JpaAggregateRepository, token verification, Money, notifications
-└── services/platform/           # space.vkurse.platform
+└── services/platform/           # vkurse.platform
     ├── user/                    # one package per module
     │   ├── domain/              # User, Email, UserRegistered, UserRepository (interface)
     │   ├── application/         # UserService: load → call the aggregate → save

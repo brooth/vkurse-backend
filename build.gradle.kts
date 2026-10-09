@@ -13,7 +13,7 @@ configure(subprojects.filter { it.buildFile.exists() }) {
     apply(plugin = "java")
     apply(plugin = "com.diffplug.spotless")
 
-    group = "space.vkurse"
+    group = "vkurse"
     version = "0.0.1-SNAPSHOT"
 
     repositories {

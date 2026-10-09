@@ -1,6 +1,6 @@
 # M9: Notification
 
-> Email and Telegram notifications for every service, in `libs/core` (`space.vkurse.core.notification`). Ported from the NestJS `notification` module. Usage is in [libs/core/README.md](../../libs/core/README.md#notifications).
+> Email and Telegram notifications for every service, in `libs/core` (`vkurse.core.notification`). Ported from the NestJS `notification` module. Usage is in [libs/core/README.md](../../libs/core/README.md#notifications).
 
 ## Scope
 

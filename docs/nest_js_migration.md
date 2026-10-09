@@ -33,8 +33,8 @@ How to bring a module from a NestJS + Firestore codebase (the source style this 
 | `README.md` | `README.md` in the module package, updated in the same change |
 | `*.spec.ts` | Not now: tests are milestone M13 |
 | `database/migrations/{N}. desc.ts` | `src/main/resources/db/migration/V{N}__desc.sql` in the service (SQL, not code) |
-| `utils/index.ts` barrel | No barrels: import the type directly (`import space.vkurse.core.error.Errors.NotFoundException;`) |
-| Path aliases (`database/…`, `utils`) | Java packages (`space.vkurse.core.error`) |
+| `utils/index.ts` barrel | No barrels: import the type directly (`import vkurse.core.error.Errors.NotFoundException;`) |
+| Path aliases (`database/…`, `utils`) | Java packages (`vkurse.core.error`) |
 | Manual import-order rule | Spotless orders imports (`./gradlew spotlessApply`) |
 | Dynamic modules (`forRoot`, `register`) | A `@Configuration` class with `@Bean` methods |
 
@@ -71,7 +71,7 @@ The one exception to constructor injection is `JpaAggregateRepository`, which fi
 | `string` | `String` + `VARCHAR`/`TEXT` |
 | `number` (count) | `int`/`long` + `INT`/`BIGINT` |
 | `number` (money, credits) | `Money` (`BigDecimal`, scale 2), or `BigDecimal` for non-money decimals; **never `double`** |
-| `Amount { value, currency }` (in `pricing/`) | `space.vkurse.core.money.Money` record, `@Embedded` → `<field>_value`, `<field>_currency` columns |
+| `Amount { value, currency }` (in `pricing/`) | `vkurse.core.money.Money` record, `@Embedded` → `<field>_value`, `<field>_currency` columns |
 | `Date` | `Instant` + `TIMESTAMPTZ`; `LocalDate` for dates without time |
 | `moment()`, `new Date()` | In an application service: `clock.instant()` (the injected `Clock`), never `Instant.now()`. In an aggregate: an `Instant now` parameter |
 | IANA timezone string | `ZoneId` (a `String` column, converted in code) |

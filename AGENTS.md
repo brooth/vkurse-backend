@@ -37,14 +37,14 @@ log.error("Failed to renew subscription: " + e.getMessage());       // ❌ loses
 - Singular for utilities and ports: `clock`, `locks`, `tokens`, `mailer`.
 
 ### 5. No conditional wiring
-Every bean always loads; don't use `@ConditionalOnProperty` for features. Required settings go in a `@ConfigurationProperties @Validated` record (see [PlatformProperties](services/platform/src/main/java/space/vkurse/platform/PlatformProperties.java)), so a missing value stops startup.
+Every bean always loads; don't use `@ConditionalOnProperty` for features. Required settings go in a `@ConfigurationProperties @Validated` record (see [PlatformProperties](services/platform/src/main/java/vkurse/platform/PlatformProperties.java)), so a missing value stops startup.
 Document each property with a `@param` tag in the record's javadoc: the configuration processor turns it into the hint the IDE shows in `application.yaml`.
 
 ### 6. RU region
 The project launches in Russia: defaults are `ru` and `RUB` only. Never default to `en` or `USD`.
 
 ### 7. Money
-Money is `space.vkurse.core.money.Money` (`BigDecimal` + currency, scale 2), never `double`. Fields of type `Money` are named `amount` or `*Amount` (`priceAmount`, `balanceAmount`).
+Money is `vkurse.core.money.Money` (`BigDecimal` + currency, scale 2), never `double`. Fields of type `Money` are named `amount` or `*Amount` (`priceAmount`, `balanceAmount`).
 
 ### 8. Balance-first payment rule (billing)
 When charging a school, take `min(balance, total)` from the school balance first, and charge only the rest through YooKassa. Skip YooKassa entirely if nothing remains.
@@ -78,10 +78,10 @@ Also keep [docs/nest_js_migration.md](docs/nest_js_migration.md) current. When y
 
 ## Module structure
 
-A service is split into modules, one package each under the service's root (`space.vkurse.platform.user`). A module has four layers:
+A service is split into modules, one package each under the service's root (`vkurse.platform.user`). A module has four layers:
 
 ```
-space/vkurse/platform/course/
+vkurse/platform/course/
 ├── domain/
 │   ├── Course.java             # aggregate (@Entity): state + the rules that change it
 │   ├── CourseTitle.java        # value object
@@ -229,7 +229,7 @@ class CourseController {
 ```
 
 ### Errors
-Throw the exceptions from `space.vkurse.core.error.Errors`. `ErrorHandler` turns them into RFC 9457 bodies with a `code`:
+Throw the exceptions from `vkurse.core.error.Errors`. `ErrorHandler` turns them into RFC 9457 bodies with a `code`:
 
 | Class | Status | `code` |
 |---|---|---|
@@ -275,4 +275,4 @@ cp services/platform/.env.example services/platform/.env  # first time only; fil
 ```
 Gradle needs a JDK 17+ to start (`JAVA_HOME`); it downloads JDK 25 for the build itself.
 
-Checks: `curl localhost:8080/actuator/health`, data with `docker exec -it vkurse-db psql -U postgres` (schema `platform`), emails in Mailpit (`http://127.0.0.1:54324`), files with the storage API (see the [storage module](services/platform/src/main/java/space/vkurse/platform/storage/README.md)). The environment variables are listed in each service's README.
+Checks: `curl localhost:8080/actuator/health`, data with `docker exec -it vkurse-db psql -U postgres` (schema `platform`), emails in Mailpit (`http://127.0.0.1:54324`), files with the storage API (see the [storage module](services/platform/src/main/java/vkurse/platform/storage/README.md)). The environment variables are listed in each service's README.

@@ -1,6 +1,6 @@
 # `libs/core`
 
-> What every Vkurse service shares. A service depends on `project(":libs:core")` and gets the beans through Spring Boot auto-configuration (`CoreAutoConfiguration`); it does not component-scan `space.vkurse.core`.
+> What every Vkurse service shares. A service depends on `project(":libs:core")` and gets the beans through Spring Boot auto-configuration (`CoreAutoConfiguration`); it does not component-scan `vkurse.core`.
 
 | Package | Content |
 |---|---|

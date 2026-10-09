@@ -2,14 +2,14 @@
 
 > Users, authentication, schools and file storage. The only service that issues tokens; every other service verifies them with the keys published at `/.well-known/jwks.json`.
 
-Source root: `src/main/java/space/vkurse/platform`. Each direct subpackage is one module (a Spring Modulith application module), split into four layers.
+Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one module (a Spring Modulith application module), split into four layers.
 
 | Module | Description |
 |---|---|
-| [`user/`](src/main/java/space/vkurse/platform/user/README.md) | The `User` aggregate and the caller's own profile (`/users/me`) |
-| [`auth/`](src/main/java/space/vkurse/platform/auth/README.md) | Sessions, our JWTs, email OTP, Google and Apple sign-in, the security filter chain |
-| [`school/`](src/main/java/space/vkurse/platform/school/README.md) | Schools, their staff with roles, invitations, students, the logo and the file library |
-| [`storage/`](src/main/java/space/vkurse/platform/storage/README.md) | Files in Supabase Storage: signed uploads and downloads, per-school paths |
+| [`user/`](src/main/java/vkurse/platform/user/README.md) | The `User` aggregate and the caller's own profile (`/users/me`) |
+| [`auth/`](src/main/java/vkurse/platform/auth/README.md) | Sessions, our JWTs, email OTP, Google and Apple sign-in, the security filter chain |
+| [`school/`](src/main/java/vkurse/platform/school/README.md) | Schools, their staff with roles, invitations, students, the logo and the file library |
+| [`storage/`](src/main/java/vkurse/platform/storage/README.md) | Files in Supabase Storage: signed uploads and downloads, per-school paths |
 
 | Layer | Holds | May use |
 |---|---|---|
@@ -47,7 +47,7 @@ Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{descript
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | yes | Google OAuth client |
 | `APPLE_CLIENT_ID` / `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | yes | Sign in with Apple: Services ID, team, key id, `.p8` PEM content |
 
-Storage must be running when the service starts: it creates its buckets then (see the [storage module](src/main/java/space/vkurse/platform/storage/README.md#supabase-storage)).
+Storage must be running when the service starts: it creates its buckets then (see the [storage module](src/main/java/vkurse/platform/storage/README.md#supabase-storage)).
 
 Generate a local signing key: `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 | awk '{printf "%s\\n", $0}'`.
 

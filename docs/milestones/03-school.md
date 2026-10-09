@@ -1,6 +1,6 @@
 # M3: School
 
-> Schools, their staff (owner, admins, authors, curators), invitations and students, in the `school` module of `services/platform`. Designed fresh: there is no NestJS source for it. How it works is in the [module README](../../services/platform/src/main/java/space/vkurse/platform/school/README.md).
+> Schools, their staff (owner, admins, authors, curators), invitations and students, in the `school` module of `services/platform`. Designed fresh: there is no NestJS source for it. How it works is in the [module README](../../services/platform/src/main/java/vkurse/platform/school/README.md).
 
 ## Scope
 
