@@ -11,10 +11,14 @@ import space.vkurse.platform.school.domain.School;
 
 /** A school as anyone may see it. */
 public record SchoolPublicResponse(
-        UUID id, String name, String slug, @Nullable String description) {
+        UUID id,
+        String name,
+        String slug,
+        @Nullable String description,
+        @Nullable String logo) {
 
     public static SchoolPublicResponse of(School school) {
         return new SchoolPublicResponse(
-                school.getId(), school.getName(), school.getSlug().value(), school.getDescription());
+                school.getId(), school.getName(), school.getSlug().value(), school.getDescription(), school.getLogo());
     }
 }

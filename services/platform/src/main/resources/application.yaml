@@ -41,7 +41,7 @@ spring:
     create-schemas: true
 
   mail:
-    # Local default: Supabase's Mailpit (UI at http://127.0.0.1:54324).
+    # Local default: Mailpit from compose.dev.yaml (UI at http://127.0.0.1:54324).
     host: ${MAIL_HOST:127.0.0.1}
     port: ${MAIL_PORT:54325}
     username: ${MAIL_USERNAME:}
@@ -109,6 +109,15 @@ vkurse:
   web-url: ${VKURSE_WEB_URL}
   database:
     schema: platform
+  storage:
+    # Supabase Storage. `url` is how this service reaches it, `public-url` how a browser does.
+    url: ${VKURSE_STORAGE_URL}
+    public-url: ${VKURSE_STORAGE_PUBLIC_URL}
+    # The service role key: it can do anything in storage.
+    service-key: ${VKURSE_STORAGE_SERVICE_KEY}
+    # Created at startup. Not `public`, `sign`, `info`, `upload` or `authenticated`: those are words in the API's paths.
+    public-bucket: vkurse-public
+    private-bucket: vkurse-private
   notification:
     mail-from: ${VKURSE_MAIL_FROM}
     telegram:

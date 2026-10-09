@@ -9,6 +9,7 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.UUID;
 import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import space.vkurse.core.domain.AggregateRoot;
@@ -32,6 +33,12 @@ public class School extends AggregateRoot {
     private Slug slug;
 
     private @Nullable String description;
+
+    /** The public link of the logo. */
+    private @Nullable String logo;
+
+    /** The stored file that link leads to. */
+    private @Nullable UUID logoFileId;
 
     /** Set when the school is deleted. A deleted school can't be found, and frees its slug. */
     private @Nullable Instant deletedAt;
@@ -61,6 +68,28 @@ public class School extends AggregateRoot {
         if (description != null) {
             this.description = checkedDescription(description);
         }
+    }
+
+    /**
+     * Sets the logo: a public stored file and its link. Returns the file of the logo it replaces, which the caller
+     * deletes; {@code null} if there was none.
+     */
+    public @Nullable UUID changeLogo(UUID fileId, String url) {
+        if (fileId.equals(logoFileId)) {
+            return null;
+        }
+        var replaced = logoFileId;
+        logo = url;
+        logoFileId = fileId;
+        return replaced;
+    }
+
+    /** Removes the logo. Returns its file, which the caller deletes; {@code null} if there was none. */
+    public @Nullable UUID removeLogo() {
+        var removed = logoFileId;
+        logo = null;
+        logoFileId = null;
+        return removed;
     }
 
     /** Deletes the school. Its row stays, with its members and students, but nothing finds it any more. */

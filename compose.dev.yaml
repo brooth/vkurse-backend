@@ -1,0 +1,74 @@
+# The local environment for development only: `docker compose -f compose.dev.yaml up -d` (in backend/).
+# Postgres, Supabase Storage and Mailpit, on the ports the services' .env.example expects.
+# The keys and passwords below are Supabase's published local demo values. Never use them outside a developer's machine.
+name: vkurse
+
+services:
+  # One Postgres for everything: each service has its own schema, and Storage keeps its records in `storage`.
+  # The Supabase image, because Storage needs the roles it comes with.
+  db:
+    container_name: vkurse-db
+    image: supabase/postgres:17.11.0.004
+    restart: unless-stopped
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+      JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - db:/var/lib/postgresql/data
+    configs:
+      # The image creates this role without a password. Runs once, when the database is first created.
+      - source: db-roles
+        target: /docker-entrypoint-initdb.d/init-scripts/99-roles.sql
+
+  # The Storage API itself, without the Supabase gateway: its paths have no /storage/v1 prefix.
+  storage:
+    container_name: vkurse-storage
+    image: supabase/storage-api:v1.80.2
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "54321:5000"
+    environment:
+      ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      AUTH_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      DATABASE_URL: postgres://supabase_storage_admin:postgres@db:5432/postgres
+      # The largest file any bucket may hold (50 MB). Each bucket sets its own lower limit.
+      FILE_SIZE_LIMIT: 52428800
+      # Seconds a signed upload link works. Keep it at StoredFile.UPLOAD_TTL (2 hours, as on hosted Supabase).
+      UPLOAD_SIGNED_URL_EXPIRATION_TIME: 7200
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      GLOBAL_S3_BUCKET: vkurse
+      TENANT_ID: vkurse
+      REGION: local
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+    volumes:
+      - storage-files:/var/lib/storage
+
+  # Catches every email the services send. UI and API on 54324, SMTP on 54325. Emails are gone after a restart.
+  mailpit:
+    container_name: vkurse-mailpit
+    image: axllent/mailpit
+    restart: unless-stopped
+    ports:
+      - "54324:8025"
+      - "54325:1025"
+
+configs:
+  db-roles:
+    content: |
+      ALTER USER supabase_storage_admin WITH PASSWORD 'postgres';
+
+volumes:
+  db:
+  storage-files:

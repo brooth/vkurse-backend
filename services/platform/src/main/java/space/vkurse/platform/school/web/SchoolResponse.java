@@ -19,6 +19,7 @@ public record SchoolResponse(
         String name,
         String slug,
         @Nullable String description,
+        @Nullable String logo,
         UUID memberId,
         SchoolRole role) {
 
@@ -31,6 +32,7 @@ public record SchoolResponse(
                 school.getName(),
                 school.getSlug().value(),
                 school.getDescription(),
+                school.getLogo(),
                 membership.member().getId(),
                 membership.member().getRole());
     }

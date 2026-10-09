@@ -1,10 +1,10 @@
 # School module
 
-> Schools, their staff and students: who works in a school and in which role, invitations to join it, and who studies there.
+> Schools, their staff and students: who works in a school and in which role, invitations to join it, who studies there, and the school's logo and file library.
 
 | Layer | File | Description |
 |---|---|---|
-| `domain` | `School` | The aggregate: `open`, `changeDetails`, `delete` |
+| `domain` | `School` | The aggregate: `open`, `changeDetails`, `changeLogo`, `removeLogo`, `delete` |
 | | `Slug` | Value object: the school's public address |
 | | `SchoolMember`, `SchoolRole` | A user on the staff with a role; the role holds the permission matrix, the member enforces it (`ensureCan…`, `changeRole`, `handOverTo`) |
 | | `SchoolInvitation` | A pending invitation: `issue`, `verify`, `accept` (returns the new `SchoolMember`) |
@@ -17,10 +17,12 @@
 | | `SchoolMemberService` | `require` (the role check for every module), `list`, `changeRole`, `remove`, `transferOwnership` |
 | | `SchoolInvitationService` | `invite`, `list`, `revoke`, `view`, `accept`, `decline` |
 | | `SchoolStudentService` | `enroll` (for other modules), `add`, `list`, `remove` |
+| | `SchoolLogoService` | `requestUpload`, `change`, `remove` |
+| | `SchoolFileService` | The file library: `requestUpload`, `confirm`, `list`, `download`, `delete` |
 | | `SchoolCleanupJob` | Removes expired invitations, hourly |
 | | `SchoolUserDeletedListener` | A deleted account leaves every school; an owner's account can't be deleted |
 | `infrastructure` | `Jpa*Repository`, `Sha256InvitationTokens` | |
-| `web` | `SchoolController`, `SchoolMemberController`, `SchoolInvitationController`, `InvitationController`, `SchoolStudentController` and their records | |
+| `web` | `SchoolController`, `SchoolMemberController`, `SchoolInvitationController`, `InvitationController`, `SchoolStudentController`, `SchoolLogoController`, `SchoolFileController` and their records | |
 
 ## Using it from another module
 
@@ -48,6 +50,9 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 | Invite, change a role, remove a member | anyone but an owner | authors and curators | | |
 | See and revoke invitations | ✓ | ✓ | | |
 | Add and remove students | ✓ | ✓ | | |
+| Change and remove the logo | ✓ | ✓ | | |
+| List and download the files of the library | ✓ | ✓ | ✓ | ✓ |
+| Upload files to the library, delete them | ✓ | ✓ | ✓ | |
 | Delete the school, transfer it | ✓ | | | |
 
 - A school has exactly one owner (`school_members_owner_key`). The role is never invited or assigned: it moves only by a transfer, which makes the old owner an admin.
@@ -65,6 +70,12 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 **Students**
 - A user is a student of a school at most once. Being on the staff is separate, and a user may be both.
 - The staff add a student by email; someone without an account gets one, as at a first sign-in (with the welcome email). Adding twice changes nothing.
+
+**Logo and file library** (the files are kept by the [storage module](../storage/README.md), which has the limits)
+- An upload takes three steps: ask for an upload link, `PUT` the raw file to it with the declared content type, then confirm. Only a confirmed file is used.
+- The logo is a public image (png, jpeg or webp, at most 5 MB): `logo` in the responses is its lasting link. Setting a logo deletes the one it replaces.
+- The library holds private files (at most 50 MB) the staff will use in lessons. A file is downloaded with a signed link that works for an hour. Only the uploader confirms an upload. A file of another school is 404.
+- Deleting a school keeps its logo and files.
 
 ## Endpoints
 
@@ -90,17 +101,28 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 | `GET /schools/{id}/students` | | staff | `StudentResponse[]`; `$search` looks in names and emails |
 | `POST /schools/{id}/students` | `{ email }` | owner, admin | `StudentResponse` |
 | `DELETE /schools/{id}/students/{studentId}` | | owner, admin | `204` |
+| `POST /schools/{id}/logo/upload` | `{ name, contentType, size }` | owner, admin | `UploadResponse` |
+| `POST /schools/{id}/logo` | `{ fileId }` | owner, admin | `SchoolResponse` |
+| `DELETE /schools/{id}/logo` | | owner, admin | `204` |
+| `POST /schools/{id}/files` | `{ name, contentType, size }` | owner, admin, author | `UploadResponse` |
+| `POST /schools/{id}/files/{fileId}/confirm` | | the uploader | `FileResponse` |
+| `GET /schools/{id}/files` | | staff | `FileResponse[]`: confirmed files, newest first; `$search` looks in names |
+| `POST /schools/{id}/files/{fileId}/download` | | staff | `{ url, expiresAt }` |
+| `DELETE /schools/{id}/files/{fileId}` | | owner, admin, author | `204` |
 
 Lists take `$limit` and `$skip`.
 
-- `SchoolResponse`: `id`, `createdAt`, `updatedAt`, `name`, `slug`, `description`, and the caller's own `memberId` and `role`.
-- `SchoolPublicResponse`: `id`, `name`, `slug`, `description`.
+- `SchoolResponse`: `id`, `createdAt`, `updatedAt`, `name`, `slug`, `description`, `logo`, and the caller's own `memberId` and `role`.
+- `SchoolPublicResponse`: `id`, `name`, `slug`, `description`, `logo`.
+- `UploadResponse`: `file` (a `FileResponse`), `uploadUrl`, `expiresAt`.
+- `FileResponse`: `id`, `createdAt`, `name`, `contentType`, `size` (bytes), `status` (`PENDING`, `READY`), `uploadedBy`.
 - `MemberResponse`: `id`, `createdAt`, `role`, `user { id, name, email, picture }`. `StudentResponse` is the same without `role`.
 - `InvitationResponse`: `id`, `createdAt`, `email`, `role`, `invitedBy`, `expiresAt`.
 
 ## Tables
 
-- `schools`: `name`, `slug`, `description`, `deleted_at`.
+- `schools`: `name`, `slug`, `description`, `logo`, `logo_file_id`, `deleted_at`.
+- The library's files are rows of `stored_files`, the storage module's table.
 - `school_members`: `school_id`, `user_id`, `role`.
 - `school_invitations`: `school_id`, `email`, `role`, `invited_by`, `token_hash`, `expires_at`.
 - `school_students`: `school_id`, `user_id`, `added_by`.

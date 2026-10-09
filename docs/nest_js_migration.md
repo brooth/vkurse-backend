@@ -290,7 +290,7 @@ Events are records implementing `DomainEvent`, in the publishing module's `domai
 | Reads before writes in transactions | No such rule; lock rows with `repository.findByIdForUpdate(id)` when two requests may change the same aggregate |
 | `convertTimestamps` | Not needed: Hibernate maps `TIMESTAMPTZ` ↔ `Instant` |
 | TS seed migrations (`ref.set({...})`) | `INSERT` statements in a Flyway migration (add `ON CONFLICT DO NOTHING` if it could meet existing rows) |
-| Emulator (`FIRESTORE_EMULATOR_HOST`) | Local Supabase (`supabase start`) |
+| Emulator (`FIRESTORE_EMULATOR_HOST`) | Local Postgres, Storage and Mailpit (`docker compose -f compose.dev.yaml up -d`) |
 
 ## 12. Auth
 
@@ -331,7 +331,7 @@ The source has `*.spec.ts` with hand-written Firestore mocks. Don't port them. T
 7. **Write `web/`:** the controller and its request/response records (section 6); real statuses, no wrappers.
 8. **Configuration:** add a properties record for any env vars the module needs, with explicit placeholders in `application.yaml` and entries in `.env.example`.
 9. **Docs:** add the module `README.md` and update the service README.
-10. **Verify:** `./gradlew spotlessApply build`, `./gradlew :services:platform:bootRun` (Hibernate validates the aggregates against the tables), then `curl` the endpoints and check the data in Supabase Studio.
+10. **Verify:** `./gradlew spotlessApply build`, `./gradlew :services:platform:bootRun` (Hibernate validates the aggregates against the tables), then `curl` the endpoints and check the data with `psql` in the `vkurse-db` container.
 
 ## 15. Source bugs you must not port
 

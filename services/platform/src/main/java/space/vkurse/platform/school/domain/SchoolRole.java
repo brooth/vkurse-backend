@@ -31,6 +31,11 @@ public enum SchoolRole {
         return this == OWNER || this == ADMIN;
     }
 
+    /** Whether this role may upload files to the school's library and delete them. Every role may read them. */
+    public boolean canManageFiles() {
+        return this == OWNER || this == ADMIN || this == AUTHOR;
+    }
+
     /**
      * Whether this role may invite someone as {@code target}, give a member that role, take it away, or remove a
      * member who has it. Nobody manages an owner, and an admin doesn't manage admins.

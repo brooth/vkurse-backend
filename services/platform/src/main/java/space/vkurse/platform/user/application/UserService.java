@@ -17,6 +17,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import space.vkurse.core.error.Errors.NotFoundException;
+import space.vkurse.platform.storage.application.StoredFileService;
 import space.vkurse.platform.user.domain.Email;
 import space.vkurse.platform.user.domain.User;
 import space.vkurse.platform.user.domain.UserRepository;
@@ -26,11 +27,14 @@ import space.vkurse.platform.user.domain.UserRepository;
 @Transactional
 public class UserService {
     private final UserRepository users;
+    private final StoredFileService files;
     private final Clock clock;
     private final TransactionTemplate newTransaction;
 
-    public UserService(UserRepository users, Clock clock, PlatformTransactionManager transactionManager) {
+    public UserService(
+            UserRepository users, StoredFileService files, Clock clock, PlatformTransactionManager transactionManager) {
         this.users = users;
+        this.files = files;
         this.clock = clock;
         this.newTransaction = new TransactionTemplate(transactionManager);
         this.newTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -51,6 +55,11 @@ public class UserService {
         var user = getMe(userId);
         user.delete(clock.instant());
         users.save(user);
+        // The row stays, so its uploaded picture is deleted here.
+        var picture = user.getPictureFileId();
+        if (picture != null) {
+            files.delete(picture);
+        }
     }
 
     @Transactional(readOnly = true)

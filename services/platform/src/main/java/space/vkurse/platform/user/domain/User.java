@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.UUID;
 import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import space.vkurse.core.domain.AggregateRoot;
@@ -37,8 +38,11 @@ public class User extends AggregateRoot {
     @Convert(converter = Email.Converter.class)
     private Email email;
 
-    /** Picture URL. */
+    /** Picture URL: the one a sign-in provider gave, or the public link of a picture the user uploaded. */
     private @Nullable String picture;
+
+    /** The stored file behind an uploaded picture; {@code null} for a provider's picture. */
+    private @Nullable UUID pictureFileId;
 
     private String locale = DEFAULT_LOCALE;
 
@@ -93,6 +97,28 @@ public class User extends AggregateRoot {
             }
             this.timezone = timezone;
         }
+    }
+
+    /**
+     * Sets a picture the user uploaded: a public stored file and its link. Returns the file of the uploaded picture it
+     * replaces, which the caller deletes; {@code null} if there was none.
+     */
+    public @Nullable UUID changePicture(UUID fileId, String url) {
+        if (fileId.equals(pictureFileId)) {
+            return null;
+        }
+        var replaced = pictureFileId;
+        picture = url;
+        pictureFileId = fileId;
+        return replaced;
+    }
+
+    /** Removes the picture, whatever it came from. Returns its file, which the caller deletes; {@code null} if none. */
+    public @Nullable UUID removePicture() {
+        var removed = pictureFileId;
+        picture = null;
+        pictureFileId = null;
+        return removed;
     }
 
     /** Deletes the account. The sessions and linked sign-in accounts go with it (they listen for the event). */

@@ -268,11 +268,11 @@ The traps that matter most:
 
 ## Running locally
 ```bash
-supabase start                                    # Postgres :54322, Studio :54323, Mailpit :54324
+docker compose -f compose.dev.yaml up -d          # Postgres :54322, Supabase Storage :54321, Mailpit :54324
 cp services/platform/.env.example services/platform/.env  # first time only; fill in VKURSE_AUTH_PRIVATE_KEY
 ./gradlew :services:platform:bootRun                  # http://localhost:8080
 ./gradlew spotlessApply                           # format + headers (run before finishing a task)
 ```
 Gradle needs a JDK 17+ to start (`JAVA_HOME`); it downloads JDK 25 for the build itself.
 
-Checks: `curl localhost:8080/actuator/health`, data in Supabase Studio (`http://127.0.0.1:54323`, schema `platform`), emails in Mailpit (`http://127.0.0.1:54324`). The environment variables are listed in each service's README.
+Checks: `curl localhost:8080/actuator/health`, data with `docker exec -it vkurse-db psql -U postgres` (schema `platform`), emails in Mailpit (`http://127.0.0.1:54324`), files with the storage API (see the [storage module](services/platform/src/main/java/space/vkurse/platform/storage/README.md)). The environment variables are listed in each service's README.

@@ -46,7 +46,8 @@ backend/
     │   ├── infrastructure/      # JpaUserRepository
     │   └── web/                 # UserController, UserResponse
     ├── auth/
-    └── school/                  # School, SchoolMember (roles), SchoolInvitation, SchoolStudent
+    ├── school/                  # School, SchoolMember (roles), SchoolInvitation, SchoolStudent, logo, file library
+    └── storage/                 # StoredFile, FilePurpose, FileStorage port (Supabase Storage)
 ```
 - **Aggregates** are JPA entities without setters, created by a factory (`User.register(…)`) and changed by methods that keep their rules (`session.rotate(…)`, `otp.verify(…)`). They raise domain events, published when they are saved.
 - **Repositories** are interfaces in `domain` with named methods (`findByEmail`), implemented in `infrastructure`.
@@ -59,7 +60,7 @@ backend/
 
 ## Milestones (one module each, in order)
 
-M1, M2 and M3 are done and live in `services/platform` (M1's foundation is now `libs/core`); M3 is described in [03-school.md](milestones/03-school.md). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
+M1 to M4 are done and live in `services/platform` (M1's foundation is now `libs/core`); M3 is described in [03-school.md](milestones/03-school.md) and M4 in [04-storage.md](milestones/04-storage.md). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
 
 | # | Module | Scope | Done when |
 |---|---|---|---|
@@ -95,9 +96,9 @@ M1, M2 and M3 are done and live in `services/platform` (M1's foundation is now `
 - Owning auth means owning its security: token signing secret, refresh rotation, OTP brute-force limits. IP rate limiting arrives only in M14.
 - Apple Sign In only redirects to registered HTTPS URLs, so testing it locally needs a tunnel (`cloudflared`).
 - Nested entity classes: M1 confirms early that Hibernate entity naming and the Criteria setup work with them.
-- Local setup needs the Supabase CLI (`brew install supabase/tap/supabase`) and a recent Docker.
+- Local setup needs only a recent Docker: `compose.dev.yaml` runs Postgres (the Supabase image), Supabase Storage and Mailpit.
 
 ## Process
 1. Each milestone gets a detailed plan: `docs/milestones/NN-<module>.md`.
 2. The plan is reviewed, then implemented.
-3. The milestone's "done when" is checked by hand: `supabase start` → `./gradlew :services:platform:bootRun` → `curl` with a token from `POST /auth/otp/login`, data in Supabase Studio (`:54323`), emails in Mailpit (`:54324`).
+3. The milestone's "done when" is checked by hand: `docker compose -f compose.dev.yaml up -d` → `./gradlew :services:platform:bootRun` → `curl` with a token from `POST /auth/otp/login`, data with `psql` in the `vkurse-db` container, emails in Mailpit (`:54324`).
