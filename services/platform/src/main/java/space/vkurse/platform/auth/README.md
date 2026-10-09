@@ -9,7 +9,7 @@
 | | `LinkedAccount` | A Google or Apple account of a user, keyed by the provider's `sub` |
 | | `PendingOAuthRequest`, `CallbackUrl` | A sign-in that is at the provider; the allowlisted frontend URL it returns to |
 | | `SignInProvider`, `AuthErrors` | `OTP` / `GOOGLE` / `APPLE`; the module's client errors |
-| | `…Repository`, `TokenIssuer`, `SecretHasher`, `OtpMailer` | Repository interfaces and ports |
+| | `…Repository`, `TokenIssuer`, `SecretHasher` | Repository interfaces and ports |
 | `application` | `SignInService` | Sign-in, OAuth exchange codes, refresh-token rotation |
 | | `OtpSignInService` | Send a code, sign in with it |
 | | `OAuthSignInService` | Find or sign up the user behind a provider account |
@@ -17,7 +17,7 @@
 | | `SessionService` | The caller's devices: list, revoke one, revoke others |
 | | `UserDeletedListener`, `AuthCleanupJob` | Ends a deleted user's access; hourly removal of expired rows |
 | `infrastructure` | `Jpa…Repository` | Database access |
-| | `RsaJwtTokens`, `HmacSecretHasher`, `SmtpOtpMailer` | The ports' implementations |
+| | `RsaJwtTokens`, `HmacSecretHasher` | The ports' implementations |
 | | `security/` | `SecurityConfig`, `SessionAuthenticationConverter`, `OAuthConfig`, `OAuthRequestStore`, `OAuthLoginHandler`, `AppleClientSecret`, `AuthFailure` |
 | `web` | `AuthController`, `OtpController`, `SessionController`, `JwksController` | Controllers with their request/response records |
 
@@ -70,7 +70,7 @@ Identity: `{ accessToken, refreshToken, sessionId, user }`.
 
 A 6-digit code lives 7 minutes and allows 5 wrong attempts; a new code for the same email can be requested once per 30 seconds (the constants are in `OtpChallenge`). Only `HMAC(secret, email:code)` is stored, and the client gets the challenge id as `token`.
 
-The email is sent after the challenge is committed, so no database connection is held during SMTP. If sending fails, the challenge is removed and the request fails. A wrong code is committed as a used attempt even though the call fails. A correct code removes the challenge.
+The email is the `otp-code` template, sent with `NotificationService.send` from `libs/core`: at once, and never stored, because a stored message would keep the code. It is sent after the challenge is committed, so no database connection is held during SMTP. If sending fails, the challenge is removed and the request fails. A wrong code is committed as a used attempt even though the call fails. A correct code removes the challenge.
 
 ## Google and Apple
 

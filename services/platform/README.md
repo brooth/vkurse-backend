@@ -16,9 +16,11 @@ Source root: `src/main/java/space/vkurse/platform`. Each direct subpackage is on
 | `infrastructure` | JPA repositories, token signing, mail, Spring Security wiring | everything in its module |
 | `web` | Controllers and request/response records | `application`, `domain` (to read) |
 
-Root classes: `PlatformApplication` (entry point), `PlatformProperties` (`vkurse.public-url`, `vkurse.mail-from`).
+Root classes: `PlatformApplication` (entry point), `PlatformProperties` (`vkurse.public-url`).
 
-Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{description}.sql` (schema `platform`).
+Notifications come from [`libs/core`](../../libs/core/README.md#notifications). This service adds the `notifications` table, the templates in `templates/notification/` (`otp-code`, `welcome`) and their subjects in `messages.properties`.
+
+Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{description}.sql` (schema `platform`), `templates/notification/`, `messages.properties` (Russian, the base bundle).
 
 ## Environment
 
@@ -33,7 +35,8 @@ Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{descript
 | `VKURSE_AUTH_KEY_ID` | yes | `kid` of that key |
 | `VKURSE_AUTH_SECRET` | yes | HMAC key for OTP and exchange code hashes, at least 32 characters |
 | `VKURSE_WEB_ORIGINS` | yes | Comma-separated frontend origins: allowed OAuth callbacks and CORS |
-| `VKURSE_MAIL_FROM` | yes | Sender address of our emails (OTP codes) |
+| `VKURSE_MAIL_FROM` | yes | Sender address of our emails |
+| `TELEGRAM_BOT_TOKEN` | yes (a placeholder works locally) | Bot API token of the bot that sends our Telegram notifications |
 | `MAIL_HOST` / `MAIL_PORT` / `MAIL_USERNAME` / `MAIL_PASSWORD` | no (local Mailpit `127.0.0.1:54325`) | SMTP server |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | yes | Google OAuth client |
 | `APPLE_CLIENT_ID` / `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | yes | Sign in with Apple: Services ID, team, key id, `.p8` PEM content |

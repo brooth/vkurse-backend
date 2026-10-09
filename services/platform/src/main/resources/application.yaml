@@ -46,6 +46,17 @@ spring:
     port: ${MAIL_PORT:54325}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          # Milliseconds. JavaMail waits forever by default.
+          connectiontimeout: 5000
+          timeout: 10000
+          writetimeout: 10000
+
+  messages:
+    # A locale without its own bundle gets messages.properties (Russian), not the server's language.
+    fallback-to-system-locale: false
 
   security:
     oauth2:
@@ -94,9 +105,13 @@ vkurse:
   # Required: startup fails if these environment variables are missing.
   node-id: ${VKURSE_NODE_ID}
   public-url: ${VKURSE_PUBLIC_URL}
-  mail-from: ${VKURSE_MAIL_FROM}
   database:
     schema: platform
+  notification:
+    mail-from: ${VKURSE_MAIL_FROM}
+    telegram:
+      # A placeholder works locally: only Telegram messages fail.
+      bot-token: ${TELEGRAM_BOT_TOKEN}
   auth:
     # RSA key (PKCS#8 PEM) that signs our tokens; its public half is served at /.well-known/jwks.json.
     private-key: ${VKURSE_AUTH_PRIVATE_KEY}

@@ -55,7 +55,14 @@ No raw types or unchecked casts without a one-line comment explaining why. Packa
 ### 10. Tests
 There are no automated tests until milestone M13. Verify changes by hand (see "Running locally").
 
-### 11. Docs
+### 11. Notifications
+Send email and Telegram only through `NotificationService` from `libs/core` ([how](libs/core/README.md#notifications)); never use `JavaMailSender` directly.
+- `send(message)` when the user is waiting for it (a sign-in code): it delivers now and throws if it can't. Call it outside a database transaction.
+- `submit(message)` for everything else: it is stored with your changes and delivered by a job, with retries.
+- **Never `submit` a secret** (a code, a token): a submitted message is stored as it is.
+- Texts are Russian templates in the service's `templates/notification/`, with the subject in `messages.properties`. Write values with `th:text`, never `th:utext`.
+
+### 12. Docs
 Keep the service README and the module READMEs up to date in every change.
 
 Also keep [docs/nest_js_migration.md](docs/nest_js_migration.md) current. When your work reveals a new difference between NestJS and Vkurse (a mapping, pitfall or source bug, or a convention that changed), add it to the guide **in the same change**.
@@ -67,7 +74,7 @@ Also keep [docs/nest_js_migration.md](docs/nest_js_migration.md) current. When y
 - A service owns its data: one Postgres schema, its own Flyway migrations. No service reads another service's tables.
 - `platform` is the only service that issues tokens. Every other service verifies access tokens with `JwtResourceServer` from `libs/core` (platform's keys at `/.well-known/jwks.json`) and makes no call to platform per request.
 - A token is trusted until it expires (15 minutes). Don't build anything that needs a sign-out or a role change to reach another service faster than that.
-- `libs/core` holds only what at least two services need, or what is a contract between services. No business rules.
+- `libs/core` holds only what at least two services need, or what is a contract between services. No business rules. A package there is flat (no layers), and public only where services use it.
 
 ## Module structure
 

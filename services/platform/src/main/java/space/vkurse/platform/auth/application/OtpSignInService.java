@@ -7,6 +7,7 @@ package space.vkurse.platform.auth.application;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
@@ -15,16 +16,20 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import space.vkurse.core.error.Errors.ClientException;
+import space.vkurse.core.notification.Content;
+import space.vkurse.core.notification.Message;
+import space.vkurse.core.notification.NotificationService;
+import space.vkurse.core.notification.Target;
 import space.vkurse.platform.auth.domain.AuthErrors.OtpExpiredException;
 import space.vkurse.platform.auth.domain.AuthErrors.OtpIncorrectException;
 import space.vkurse.platform.auth.domain.AuthErrors.OtpTooFrequentException;
 import space.vkurse.platform.auth.domain.OtpChallenge;
 import space.vkurse.platform.auth.domain.OtpChallengeRepository;
-import space.vkurse.platform.auth.domain.OtpMailer;
 import space.vkurse.platform.auth.domain.SecretHasher;
 import space.vkurse.platform.auth.domain.SignInProvider;
 import space.vkurse.platform.user.application.UserService;
 import space.vkurse.platform.user.domain.Email;
+import space.vkurse.platform.user.domain.User;
 
 /** Sign-in with a code sent by email. The rules of a code are in {@link OtpChallenge}. */
 @Service
@@ -33,7 +38,7 @@ public class OtpSignInService {
     private final SignInService signIn;
     private final UserService users;
     private final SecretHasher hasher;
-    private final OtpMailer mailer;
+    private final NotificationService notifications;
     private final Clock clock;
     private final TransactionTemplate transaction;
 
@@ -42,14 +47,14 @@ public class OtpSignInService {
             SignInService signIn,
             UserService users,
             SecretHasher hasher,
-            OtpMailer mailer,
+            NotificationService notifications,
             Clock clock,
             PlatformTransactionManager transactionManager) {
         this.challenges = challenges;
         this.signIn = signIn;
         this.users = users;
         this.hasher = hasher;
-        this.mailer = mailer;
+        this.notifications = notifications;
         this.clock = clock;
         this.transaction = new TransactionTemplate(transactionManager);
     }
@@ -69,7 +74,13 @@ public class OtpSignInService {
             return challenges.save(OtpChallenge.issue(email, hash(email, code), now));
         }));
         try {
-            mailer.send(email, code, OtpChallenge.TTL);
+            // Sent at once, never submitted: the user is waiting, and a stored message would keep the code.
+            notifications.send(Message.of(
+                    Content.template(
+                            "otp-code",
+                            User.DEFAULT_LOCALE,
+                            Map.of("code", code, "minutes", OtpChallenge.TTL.toMinutes())),
+                    Target.email(email.value())));
         } catch (RuntimeException e) {
             transaction.executeWithoutResult(status -> challenges.removeById(challenge.getId()));
             throw e;

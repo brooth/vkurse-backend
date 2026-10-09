@@ -16,16 +16,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import space.vkurse.core.error.ErrorHandler;
+import space.vkurse.core.notification.NotificationConfiguration;
 import space.vkurse.core.persistence.LockService;
 
 /**
- * The beans a service gets by depending on this library: the error handler, the clock and cluster locks. A service
- * doesn't component-scan {@code space.vkurse.core}.
+ * The beans a service gets by depending on this library: the error handler, the clock, cluster locks and
+ * notifications. A service doesn't component-scan {@code space.vkurse.core}.
  */
 @AutoConfiguration
 @EnableConfigurationProperties(CoreProperties.class)
 @EnableSchedulerLock(defaultLockAtMostFor = "PT5M")
-@Import({ErrorHandler.class, LockService.class})
+@Import({ErrorHandler.class, LockService.class, NotificationConfiguration.class})
 public class CoreAutoConfiguration {
 
     /** The application clock. Inject it instead of calling {@code Instant.now()}, so time can be controlled later. */

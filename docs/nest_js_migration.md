@@ -28,7 +28,8 @@ How to bring a module from a NestJS + Firestore codebase (the source style this 
 | `{module}.module.ts` (`imports`/`providers`/`exports`) | `package-info.java` with `@ApplicationModule`; `@NamedInterface` on the layers other modules use. Beans are found by component scan |
 | `{module}.types.ts` | Event records and value objects in `domain/`; the module's client errors in `domain/{Module}Errors.java` |
 | `{module}.utils.ts` | A value object or an aggregate method, if it holds a rule; otherwise a helper where it is used |
-| Client for an outside system (mail, payments) | A port interface in `domain/`, its implementation in `infrastructure/` |
+| Client for an outside system (payments, storage) | A port interface in `domain/`, its implementation in `infrastructure/` |
+| `notification/` module, `NotificationService.send([{ data, channels }])` | Already ported, to `libs/core`: inject `NotificationService` (section 10). Don't write a mail port per module |
 | `README.md` | `README.md` in the module package, updated in the same change |
 | `*.spec.ts` | Not now: tests are milestone M13 |
 | `database/migrations/{N}. desc.ts` | `src/main/resources/db/migration/V{N}__desc.sql` in the service (SQL, not code) |
@@ -247,6 +248,8 @@ Validation errors keep the same `constraints` map, now as a top-level field next
 | `async` / `await`, `Promise<T>` | Plain blocking code returning `T`; virtual threads handle concurrency |
 | `Promise.all([...])` of I/O calls | Sequential calls, unless the latency really matters; then `Executors.newVirtualThreadPerTaskExecutor()` |
 | Fire-and-forget `void this.insights.notify(...)` | Publish an event; a listener in the other module handles it |
+| `await this.notifications.send(...)` whose result is ignored | `notifications.submit(message)`: stored in the same transaction, delivered and retried by a job |
+| `notifications.send(...)` whose failure fails the request (the OTP email) | `notifications.send(message)`, outside the transaction; it throws `DeliveryFailedException` |
 | `eventEmitter.emit('x.y', payload)` + `@OnEvent('x.y')` | `ApplicationEventPublisher.publishEvent(new XyEvent(...))` + `@ApplicationModuleListener void on(XyEvent e)` |
 | `@Cron('0 * * * *')` (5 fields) | `@Scheduled(cron = "0 0 * * * *")` (**6 fields, seconds first**; a 5-field expression fails at startup) + `@SchedulerLock(name = "…")` |
 | `setTimeout` retry loops | Spring's `@Retryable` on the outgoing call |
@@ -264,8 +267,13 @@ Events are records implementing `DomainEvent`, in the publishing module's `domai
 | `axios.create({ baseURL, auth })` | A port interface in `domain/`, implemented in `infrastructure/` with a `RestClient` bean or an `@HttpExchange` interface, with timeouts set |
 | axios error handling (`error.response.data`) | Catch `RestClientResponseException` and map it to a `ClientException` code |
 | `Idempotence-Key: randomUUID()` | A key derived from **our** record id (e.g. the payment id), so a retry is the same request |
-| `nestjs-i18n` JSON (`t('a.b', lang, { args })`) | Spring `MessageSource`, `messages_ru.properties` (M9); nested keys → dotted keys; default locale `ru` |
-| Handlebars templates (`{{name}}`) | Thymeleaf (`th:text="${name}"`) (M9) |
+| `nestjs-i18n` JSON (`t('a.b', lang, { args })`) | Spring `MessageSource`; nested keys → dotted keys. Russian goes in the base `messages.properties`, so `ru` is the fallback for every locale |
+| Handlebars templates (`{{name}}`) | Thymeleaf: `templates/notification/{name}.html` with `th:text="${name}"`, plus `{name}.txt` with `[(${name})]` for Telegram and the email's text part |
+| `{ type: 'html-template', template: 'x.hbs', title, params }` | `Content.template("x", locale, params)`; the title is `notification.x.subject` in `messages.properties` |
+| `{ type: 'plain', title, message }` | `Content.text(title, body)` |
+| `channels: [{ channel: 'email', to }, { channel: 'telegram', chatId }]` | `Target.email(address), Target.telegram(chatId)`, tried in that order |
+| `title = lang === 'ru' ? '…' : '…'` in the service | A key in the message bundle. `messages.properties` is the Russian base; another language is `messages_{locale}.properties` |
+| `layout: 'base-notification.hbs'` | Core's `layout.html`, always applied. Don't copy the source's layout or sign-off |
 
 ## 11. Firestore → Postgres
 
@@ -346,3 +354,8 @@ The source has `*.spec.ts` with hand-written Firestore mocks. Don't port them. T
 | OAuth users linked by email, even an unverified one | Link by provider `sub`; link by email only when the provider marks it verified |
 | `/sessions` endpoints not scoped to the caller | `SessionService` takes the caller's `userId` in every method |
 | JWT secret with a hard-coded default, shared by everything that verifies tokens | A required private key only platform holds; startup fails without it |
+| Notification templates rendered with `noEscape: true`, so user text (a message preview) went into email HTML unescaped | `th:text` escapes; never `th:utext` on a parameter |
+| An HTML email template sent to Telegram with `parse_mode: HTML`: Telegram rejects tags like `<p>`, so the fallback always failed | Telegram gets the template's text form |
+| A template path checked with `fullPath.startsWith(baseDir)`, which a sibling directory (`templates-x`) passes | Templates are classpath resources named `[a-z0-9-]+` |
+| A push stub that logs and returns success, so callers believe a push was delivered | Not ported. A channel that doesn't exist is not offered |
+| A failed notification was dropped (the result of `send` was ignored) | `submit` stores it and retries |

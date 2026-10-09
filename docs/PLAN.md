@@ -38,7 +38,7 @@ The rules are in [AGENTS.md](../AGENTS.md); this is the outline.
 
 ```
 backend/
-├── libs/core/                   # errors, validation, AggregateRoot, JpaAggregateRepository, token verification, Money
+├── libs/core/                   # errors, validation, AggregateRoot, JpaAggregateRepository, token verification, Money, notifications
 └── services/platform/           # space.vkurse.platform
     ├── user/                    # one package per module
     │   ├── domain/              # User, Email, UserRegistered, UserRepository (interface)
@@ -58,7 +58,7 @@ backend/
 
 ## Milestones (one module each, in order)
 
-M1 and M2 are done and live in `services/platform` (M1's foundation is now `libs/core`). Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
+M1 and M2 are done and live in `services/platform` (M1's foundation is now `libs/core`). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
 
 | # | Module | Scope | Done when |
 |---|---|---|---|
@@ -70,7 +70,7 @@ M1 and M2 are done and live in `services/platform` (M1's foundation is now `libs
 | M6 | **Payment** | `PaymentGateway` port, YooKassa adapter, encrypted per-school credentials, `Payment`, idempotent webhook inbox, refunds, `PaymentSucceeded`/`PaymentCanceled` events | Test-shop webhook is processed exactly once, even when replayed |
 | M7 | **Commerce** | `Offer`, `Order` lifecycle, promo codes, checkout, `OrderPaid` event | Student pays with a test card, and the order becomes PAID |
 | M8 | **Learning** | `Enrollment`, lesson unlock (drip/stop lessons), progress, homework + curator review, quizzes | Paid student progresses, and accepted homework unlocks the next lesson |
-| M9 | **Notification & i18n** | Channels with fallback (email via Thymeleaf ru templates, Telegram), `MessageSource`, the OTP email moved from `auth` to a template, push tokens on sessions, event triggers | Emails show up in Mailpit |
+| M9 | **Notification & i18n** | In `libs/core`: channels with fallback (email via Thymeleaf ru templates, Telegram), send now or store and retry, `MessageSource`, the OTP email moved from `auth` to a template, a welcome email on sign-up. Push tokens are deferred. See [09-notification.md](milestones/09-notification.md) | Emails show up in Mailpit |
 | M10 | **Billing** | Plans with limits, school subscriptions, school balance + ledger, balance-first rule, autopay, renewal job | Renewal charges a school through autopay in the test shop |
 | M11 | **Admin** | `/admin/**` for users, schools, plans, subscriptions, payments and balance adjustments; SQL-view reports | Admin can manage everything above |
 | M12 | **Monitoring** | Actuator, Micrometer, OpenTelemetry → Grafana LGTM, JSON logs, Telegram error appender, admin insights | Traces and metrics visible in Grafana |

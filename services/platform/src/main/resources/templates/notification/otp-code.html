@@ -1,0 +1,9 @@
+<!--/*
+  Copyright (C) vkurse.space - All Rights Reserved
+  Unauthorized copying of this file, via any medium is strictly prohibited
+  Proprietary and confidential
+*/-->
+<!--/* Params: code (the sign-in code), minutes (how long it works). */-->
+<p style="margin:0;">Ваш код для входа в VKurse:</p>
+<p style="margin:0;padding:16px 0;font-size:32px;font-weight:700;letter-spacing:6px;" th:text="${code}">123456</p>
+<p style="margin:0;">Код действует <span th:text="${minutes}">7</span> минут. Если вы не запрашивали код, просто проигнорируйте это письмо.</p>
