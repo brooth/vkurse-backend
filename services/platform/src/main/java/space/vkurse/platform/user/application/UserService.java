@@ -58,6 +58,11 @@ public class UserService {
         return users.findById(userId);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<User> findByEmail(Email email) {
+        return users.findByEmail(email);
+    }
+
     /**
      * Returns the user with this email, signing one up if there is none. {@code name} and {@code picture} are only
      * used for a new user.

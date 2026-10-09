@@ -1,0 +1,9 @@
+<!--/*
+  Copyright (C) vkurse.space - All Rights Reserved
+  Unauthorized copying of this file, via any medium is strictly prohibited
+  Proprietary and confidential
+*/-->
+<!--/* Params: schoolName, inviterName, role (a SchoolRole name), link (to the web app, with the token), days (how long it works). */-->
+<p style="margin:0 0 12px;"><span th:text="${inviterName}">Имя</span> приглашает вас в команду школы «<span th:text="${schoolName}">Школа</span>» на VKurse. Ваша роль: <span th:text="#{${'school.role.' + role}}">автор</span>.</p>
+<p style="margin:0 0 12px;"><a th:href="${link}" style="color:#2563eb;">Принять приглашение</a></p>
+<p style="margin:0;">Ссылка действует <span th:text="${days}">7</span> дней. Не пересылайте её: по ней можно вступить в школу. Если вы не ждали приглашения, просто проигнорируйте это письмо.</p>

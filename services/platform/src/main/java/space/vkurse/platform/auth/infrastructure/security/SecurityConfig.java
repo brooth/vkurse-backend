@@ -51,7 +51,8 @@ import space.vkurse.platform.auth.infrastructure.RsaJwtTokens;
 @Configuration(proxyBeanMethods = false)
 @EnableMethodSecurity
 class SecurityConfig {
-    private static final String[] PUBLIC_PATHS = {"/auth/**", JwtResourceServer.JWKS_PATH, "/actuator/health", "/error"
+    private static final String[] PUBLIC_PATHS = {
+        "/auth/**", JwtResourceServer.JWKS_PATH, "/schools/by-slug/*", "/actuator/health", "/error"
     };
 
     @Bean

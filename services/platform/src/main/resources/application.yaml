@@ -105,6 +105,8 @@ vkurse:
   # Required: startup fails if these environment variables are missing.
   node-id: ${VKURSE_NODE_ID}
   public-url: ${VKURSE_PUBLIC_URL}
+  # The web app: the base of the links in our emails.
+  web-url: ${VKURSE_WEB_URL}
   database:
     schema: platform
   notification:

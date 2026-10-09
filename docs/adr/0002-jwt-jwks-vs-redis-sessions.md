@@ -7,7 +7,7 @@ Accepted
 
 Platform issues JWT access tokens to authenticate users. Other services (currently analytics, more will follow) need to verify these tokens on every request, without creating a hard dependency on platform being reachable for every single call.
 
-**Motivating use case:** this is an online course platform — students and authors interact directly, and a course moderator may need to ban a student for a violation (e.g. abusive behavior, cheating, harassment of an author). A ban must take effect immediately: the banned student's existing session should stop working right away, not continue to function for up to 15 minutes until their token naturally expires. The same mechanism also covers the more general cases of logout and role changes, but instant ban enforcement is the primary driver for needing any revocation mechanism at all, rather than relying purely on short token expiry.
+**Motivating use case:** this is an online course platform — students and authors interact directly, and a course curator may need to ban a student for a violation (e.g. abusive behavior, cheating, harassment of an author). A ban must take effect immediately: the banned student's existing session should stop working right away, not continue to function for up to 15 minutes until their token naturally expires. The same mechanism also covers the more general cases of logout and role changes, but instant ban enforcement is the primary driver for needing any revocation mechanism at all, rather than relying purely on short token expiry.
 
 Three options were considered for how tokens are verified and how revocation (logout, role change, blocking a user) is handled:
 

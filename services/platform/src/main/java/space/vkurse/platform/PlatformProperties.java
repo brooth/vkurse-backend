@@ -15,7 +15,9 @@ import org.springframework.validation.annotation.Validated;
  * {@code CoreProperties}.
  *
  * @param publicUrl public base URL of this service: the issuer of our tokens and the base of OAuth redirect URIs
+ * @param webUrl base URL of the web app: links in our emails lead there
  */
 @Validated
 @ConfigurationProperties("vkurse")
-public record PlatformProperties(@NotNull URI publicUrl) {}
+public record PlatformProperties(
+        @NotNull URI publicUrl, @NotNull URI webUrl) {}

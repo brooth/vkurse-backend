@@ -19,7 +19,7 @@ import space.vkurse.platform.user.application.UserService;
 
 /** The caller's own profile. */
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/users/me")
 class UserController {
     private final UserService users;
 
@@ -27,18 +27,18 @@ class UserController {
         this.users = users;
     }
 
-    @GetMapping("/me")
+    @GetMapping
     UserResponse getMe(@GetSession UserSession session) {
         return UserResponse.of(users.getMe(session.userId()));
     }
 
-    @PatchMapping("/me")
+    @PatchMapping
     UserResponse updateMe(@GetSession UserSession session, @Valid @RequestBody UpdateProfileRequest data) {
         return UserResponse.of(users.updateMe(session.userId(), data.name(), data.locale(), data.timezone()));
     }
 
     /** Deletes the account. Its sessions and linked sign-in accounts are deleted with it. */
-    @DeleteMapping("/me")
+    @DeleteMapping
     ResponseEntity<Void> deleteMe(@GetSession UserSession session) {
         users.deleteMe(session.userId());
         return ResponseEntity.noContent().build();

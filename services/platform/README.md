@@ -1,6 +1,6 @@
 # `services/platform`
 
-> Users and authentication. The only service that issues tokens; every other service verifies them with the keys published at `/.well-known/jwks.json`.
+> Users, authentication and schools. The only service that issues tokens; every other service verifies them with the keys published at `/.well-known/jwks.json`.
 
 Source root: `src/main/java/space/vkurse/platform`. Each direct subpackage is one module (a Spring Modulith application module), split into four layers.
 
@@ -8,6 +8,7 @@ Source root: `src/main/java/space/vkurse/platform`. Each direct subpackage is on
 |---|---|
 | [`user/`](src/main/java/space/vkurse/platform/user/README.md) | The `User` aggregate and the caller's own profile (`/users/me`) |
 | [`auth/`](src/main/java/space/vkurse/platform/auth/README.md) | Sessions, our JWTs, email OTP, Google and Apple sign-in, the security filter chain |
+| [`school/`](src/main/java/space/vkurse/platform/school/README.md) | Schools, their staff with roles, invitations and students |
 
 | Layer | Holds | May use |
 |---|---|---|
@@ -16,9 +17,9 @@ Source root: `src/main/java/space/vkurse/platform`. Each direct subpackage is on
 | `infrastructure` | JPA repositories, token signing, mail, Spring Security wiring | everything in its module |
 | `web` | Controllers and request/response records | `application`, `domain` (to read) |
 
-Root classes: `PlatformApplication` (entry point), `PlatformProperties` (`vkurse.public-url`).
+Root classes: `PlatformApplication` (entry point), `PlatformProperties` (`vkurse.public-url`, `vkurse.web-url`).
 
-Notifications come from [`libs/core`](../../libs/core/README.md#notifications). This service adds the `notifications` table, the templates in `templates/notification/` (`otp-code`, `welcome`) and their subjects in `messages.properties`.
+Notifications come from [`libs/core`](../../libs/core/README.md#notifications). This service adds the `notifications` table, the templates in `templates/notification/` (`otp-code`, `welcome`, `school-invitation`) and their subjects in `messages.properties`.
 
 Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{description}.sql` (schema `platform`), `templates/notification/`, `messages.properties` (Russian, the base bundle).
 
@@ -28,6 +29,7 @@ Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{descript
 |---|---|---|
 | `VKURSE_NODE_ID` | yes | Instance name used in logs and alerts |
 | `VKURSE_PUBLIC_URL` | yes | Public base URL of this service: token issuer, OAuth redirect URIs |
+| `VKURSE_WEB_URL` | yes | Base URL of the web app: links in our emails (a school invitation) lead there |
 | `DATABASE_URL` / `DATABASE_USER` / `DATABASE_PASSWORD` | no (local defaults) | JDBC connection |
 | `SPRING_PROFILES_ACTIVE` | no (`dev`) | `prod` in production (JSON logs) |
 | `PORT` | no (`8080`) | HTTP port |
