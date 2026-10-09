@@ -1,6 +1,6 @@
-# VKurse backend: main plan
+# Vkurse backend: main plan
 
-VKurse is a platform for online schools in Russia. Schools (course authors) build and sell courses, and students buy them and study. The backend is a set of **Spring Boot** services on **Supabase** (Postgres and Storage).
+Vkurse is a platform for online schools in Russia. Schools (course authors) build and sell courses, and students buy them and study. The backend is a set of **Spring Boot** services on **Supabase** (Postgres and Storage).
 
 This is the **main plan**. Every milestone below gets its own detailed plan in `docs/milestones/` before it is implemented.
 
@@ -9,10 +9,10 @@ This is the **main plan**. Every milestone below gets its own detailed plan in `
 |---|---|
 | Market | Russia only: YooKassa, RUB, `ru` by default, 54-FZ receipts. Russia's 152-FZ data law means prod runs in a RU cloud (Yandex Cloud, Selectel or Timeweb): self-hosted Supabase, or plain Postgres + S3-compatible storage |
 | Money flow | Each school connects **its own YooKassa shop** (credentials stored encrypted), and students pay the school directly. The **platform bills schools a SaaS subscription** through its own shop |
-| Architecture | **Microservices** with a shared library (`libs/common`). `services/core` owns users and auth and is the only token issuer. Each service owns one Postgres schema and its migrations; no service reads another's tables |
+| Architecture | **Microservices** with a shared library (`libs/core`). `services/platform` owns users and auth and is the only token issuer. Each service owns one Postgres schema and its migrations; no service reads another's tables |
 | Model | **Rich domain model (DDD)**: aggregates own their rules and have no setters; modules are split into `domain` / `application` / `infrastructure` / `web`; repositories are explicit interfaces. See `AGENTS.md` |
 | Supabase | **Postgres + Storage** only. The services are the only data gateway; PostgREST is not exposed for our schemas |
-| Auth | **Our own `auth` module** in `core` (M2), not Supabase Auth: email OTP, Google and Apple login. Core issues RS256 JWTs (15-minute access + rotating refresh), publishes its keys at `/.well-known/jwks.json` and keeps sessions in Postgres. Other services verify tokens locally and trust them until they expire; on core itself a sign-out is instant. Russian logins (VK ID, Yandex ID, Telegram) can be added as more providers later |
+| Auth | **Our own `auth` module** in `platform` (M2), not Supabase Auth: email OTP, Google and Apple login. Platform issues RS256 JWTs (15-minute access + rotating refresh), publishes its keys at `/.well-known/jwks.json` and keeps sessions in Postgres. Other services verify tokens locally and trust them until they expire; on platform itself a sign-out is instant. Russian logins (VK ID, Yandex ID, Telegram) can be added as more providers later |
 | Build | One Gradle multi-project (`backend/`): Kotlin DSL + `libs.versions.toml` + foojay toolchains (JDK 25 is downloaded automatically) |
 | Runtime | Java 25 LTS, Spring Boot 4.1, virtual threads on |
 | Data access | **Hibernate (JPA)** on the aggregates themselves, through one `JpaAggregateRepository` subclass per aggregate, with no Spring Data repositories. **Flyway** only applies versioned schema scripts (`db/migration/V{N}__desc.sql`). We don't use Hibernate's `ddl-auto`, because it isn't safe in prod |
@@ -23,7 +23,7 @@ This is the **main plan**. Every milestone below gets its own detailed plan in `
 
 ```java
 /*
- * Copyright (C) VKurse - All Rights Reserved
+ * Copyright (C) vkurse.space - All Rights Reserved
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
  */
@@ -38,8 +38,8 @@ The rules are in [AGENTS.md](../AGENTS.md); this is the outline.
 
 ```
 backend/
-├── libs/common/                 # errors, validation, AggregateRoot, JpaAggregateRepository, token verification, Money
-└── services/core/               # ru.vkurse.core
+├── libs/core/                   # errors, validation, AggregateRoot, JpaAggregateRepository, token verification, Money
+└── services/platform/           # space.vkurse.platform
     ├── user/                    # one package per module
     │   ├── domain/              # User, Email, UserRegistered, UserRepository (interface)
     │   ├── application/         # UserService: load → call the aggregate → save
@@ -52,13 +52,13 @@ backend/
 - **Application services** hold use cases and transactions, and take the caller's `userId` explicitly.
 - **Controllers** return response records, never aggregates.
 - Aggregates reference each other **by id**, with no lazy JPA relations.
-- Tables use plural names (`courses`) in the service's own schema (`core`).
+- Tables use plural names (`courses`) in the service's own schema (`platform`).
 
 ---
 
 ## Milestones (one module each, in order)
 
-M1 and M2 are done and live in `services/core` (M1's foundation is now `libs/common`). Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
+M1 and M2 are done and live in `services/platform` (M1's foundation is now `libs/core`). Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
 
 | # | Module | Scope | Done when |
 |---|---|---|---|
@@ -99,4 +99,4 @@ M1 and M2 are done and live in `services/core` (M1's foundation is now `libs/com
 ## Process
 1. Each milestone gets a detailed plan: `docs/milestones/NN-<module>.md`.
 2. The plan is reviewed, then implemented.
-3. The milestone's "done when" is checked by hand: `supabase start` → `./gradlew :services:core:bootRun` → `curl` with a token from `POST /auth/otp/login`, data in Supabase Studio (`:54323`), emails in Mailpit (`:54324`).
+3. The milestone's "done when" is checked by hand: `supabase start` → `./gradlew :services:platform:bootRun` → `curl` with a token from `POST /auth/otp/login`, data in Supabase Studio (`:54323`), emails in Mailpit (`:54324`).

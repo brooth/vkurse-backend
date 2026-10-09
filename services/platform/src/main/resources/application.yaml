@@ -1,0 +1,114 @@
+spring:
+  application:
+    name: vkurse-platform
+  config:
+    # Local development reads a .env file (see .env.example). Real environment variables win.
+    import: optional:file:.env[.properties]
+  profiles:
+    # `dev` unless SPRING_PROFILES_ACTIVE says otherwise (prod sets it to `prod`).
+    default: dev
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    # Unset (null) fields are left out of responses.
+    default-property-inclusion: non_null
+
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:54322/postgres}
+    username: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    hikari:
+      schema: ${vkurse.database.schema}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Flyway owns the schema. Hibernate only checks that entities match it.
+      ddl-auto: validate
+      naming:
+        # Embedded fields get prefixed columns: `Money price` -> price_value, price_currency.
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyComponentPathImpl
+    properties:
+      hibernate:
+        default_schema: ${vkurse.database.schema}
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    schemas: ${vkurse.database.schema}
+    default-schema: ${vkurse.database.schema}
+    create-schemas: true
+
+  mail:
+    # Local default: Supabase's Mailpit (UI at http://127.0.0.1:54324).
+    host: ${MAIL_HOST:127.0.0.1}
+    port: ${MAIL_PORT:54325}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+
+  security:
+    oauth2:
+      client:
+        # Missing credentials stop startup. Placeholder values work locally: only that provider's sign-in fails.
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid,email,profile
+            redirect-uri: ${vkurse.public-url}/auth/oauth/{registrationId}/callback
+          apple:
+            # The Services ID. The client secret is generated from vkurse.auth.apple (AppleClientSecret).
+            client-id: ${APPLE_CLIENT_ID}
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            scope: openid,email,name
+            redirect-uri: ${vkurse.public-url}/auth/oauth/{registrationId}/callback
+            client-name: Apple
+        provider:
+          apple:
+            # Set explicitly, so startup makes no discovery call to Apple.
+            authorization-uri: https://appleid.apple.com/auth/authorize
+            token-uri: https://appleid.apple.com/auth/token
+            jwk-set-uri: https://appleid.apple.com/auth/keys
+            user-name-attribute: sub
+
+  modulith:
+    events:
+      jdbc:
+        schema: ${vkurse.database.schema}
+        schema-initialization:
+          # The event_publication table is created by Flyway (V1__init.sql).
+          enabled: false
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+vkurse:
+  # Required: startup fails if these environment variables are missing.
+  node-id: ${VKURSE_NODE_ID}
+  public-url: ${VKURSE_PUBLIC_URL}
+  mail-from: ${VKURSE_MAIL_FROM}
+  database:
+    schema: platform
+  auth:
+    # RSA key (PKCS#8 PEM) that signs our tokens; its public half is served at /.well-known/jwks.json.
+    private-key: ${VKURSE_AUTH_PRIVATE_KEY}
+    key-id: ${VKURSE_AUTH_KEY_ID}
+    # HMAC key for OTP and exchange code hashes.
+    secret: ${VKURSE_AUTH_SECRET}
+    # Other services trust an access token until it expires.
+    access-ttl: 15m
+    refresh-ttl: 180d
+    # Comma-separated frontend origins: allowed OAuth callbacks and CORS.
+    web-origins: ${VKURSE_WEB_ORIGINS}
+    apple:
+      team-id: ${APPLE_TEAM_ID}
+      key-id: ${APPLE_KEY_ID}
+      private-key: ${APPLE_PRIVATE_KEY}

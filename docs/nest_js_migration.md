@@ -1,16 +1,16 @@
-# Porting NestJS code to VKurse
+# Porting NestJS code to Vkurse
 
-How to bring a module from a NestJS + Firestore codebase (the source style this project grew out of) into VKurse (Spring Boot + Hibernate + Postgres). Read [AGENTS.md](../AGENTS.md) first; this guide covers only what differs when the *source* is NestJS.
+How to bring a module from a NestJS + Firestore codebase (the source style this project grew out of) into Vkurse (Spring Boot + Hibernate + Postgres). Read [AGENTS.md](../AGENTS.md) first; this guide covers only what differs when the *source* is NestJS.
 
-**Port behavior, not code.** Understand what the source module does, then write it the VKurse way. A line-by-line translation of TypeScript gives Java that fights the framework, and carries over the source's bugs.
+**Port behavior, not code.** Understand what the source module does, then write it the Vkurse way. A line-by-line translation of TypeScript gives Java that fights the framework, and carries over the source's bugs.
 
-**The source is anemic; VKurse is not.** A source entity is a bag of fields, and its rules are spread over the service and its hooks, on top of a generic CRUD base (`findOne`, `updateById`, `preHook`). VKurse has no such base. Find the rules, and give them to an aggregate as methods (`session.rotate(…)`, `otp.verify(…)`); the service that remains only loads, calls and saves.
+**The source is anemic; Vkurse is not.** A source entity is a bag of fields, and its rules are spread over the service and its hooks, on top of a generic CRUD base (`findOne`, `updateById`, `preHook`). Vkurse has no such base. Find the rules, and give them to an aggregate as methods (`session.rotate(…)`, `otp.verify(…)`); the service that remains only loads, calls and saves.
 
 ---
 
 ## 1. Ground rules
 
-- **No source branding.** Never copy the source project's name, URLs, copyright headers, API keys, secrets or `.env` values. Every file gets the VKurse header.
+- **No source branding.** Never copy the source project's name, URLs, copyright headers, API keys, secrets or `.env` values. Every file gets the Vkurse header.
 - **Don't port known bugs** (section 15). If the source has a `TODO` stub (for example a `reserve()` that does nothing), implement it properly or leave it out and say so. Never port a stub silently.
 - **Don't port Firestore workarounds.** Search tokens, `_bin` collections, index JSON files, reads-before-writes ordering and `watch` all exist only because of Firestore (section 11).
 - **Keep the business rules.** RU region, the balance-first payment rule and the money naming carry over unchanged ([AGENTS.md](../AGENTS.md)).
@@ -18,7 +18,7 @@ How to bring a module from a NestJS + Firestore codebase (the source style this 
 
 ## 2. Files and modules
 
-| NestJS source | VKurse |
+| NestJS source | Vkurse |
 |---|---|
 | `{module}/{module}.entity.ts` | `domain/{Name}.java`: one aggregate per file, no `Entity` suffix (`Course`). Its enums are nested in it |
 | Create/Update DTO classes | Request records next to the controller in `web/` (`CreateCourseRequest`), or nested in it when used once |
@@ -32,14 +32,14 @@ How to bring a module from a NestJS + Firestore codebase (the source style this 
 | `README.md` | `README.md` in the module package, updated in the same change |
 | `*.spec.ts` | Not now: tests are milestone M13 |
 | `database/migrations/{N}. desc.ts` | `src/main/resources/db/migration/V{N}__desc.sql` in the service (SQL, not code) |
-| `utils/index.ts` barrel | No barrels: import the type directly (`import ru.vkurse.common.error.Errors.NotFoundException;`) |
-| Path aliases (`database/…`, `utils`) | Java packages (`ru.vkurse.common.error`) |
+| `utils/index.ts` barrel | No barrels: import the type directly (`import space.vkurse.core.error.Errors.NotFoundException;`) |
+| Path aliases (`database/…`, `utils`) | Java packages (`space.vkurse.core.error`) |
 | Manual import-order rule | Spotless orders imports (`./gradlew spotlessApply`) |
 | Dynamic modules (`forRoot`, `register`) | A `@Configuration` class with `@Bean` methods |
 
 ## 3. Dependency injection
 
-| NestJS | VKurse |
+| NestJS | Vkurse |
 |---|---|
 | `@Injectable()` service | `@Service` (`@Component` for non-services) |
 | `@Inject() private readonly users: UserService;` | Constructor injection: `private final UserService users;` set in the constructor |
@@ -54,7 +54,7 @@ The one exception to constructor injection is `JpaAggregateRepository`, which fi
 ## 4. Entities and payloads
 
 ### 4.1 Base classes
-| Source | VKurse |
+| Source | Vkurse |
 |---|---|
 | `Entity` (`id: string`, `createdAt`, `updatedAt`, `deletedAt`) | `AggregateRoot` (`UUID id` v7, `createdAt`, `updatedAt`, `version`). No `deletedAt`: see "Deleting" in section 5 |
 | `UserEntity` base (`createdBy`, `updatedBy`, `deletedBy`) | No base class. An aggregate that belongs to a user has an explicit `userId` (or `ownerId`), set by its factory |
@@ -65,12 +65,12 @@ The one exception to constructor injection is `JpaAggregateRepository`, which fi
 | A string with a format (`email`, a URL that must be allowlisted) | A value object record that validates itself (`Email`, `CallbackUrl`), stored with a nested `AttributeConverter` |
 
 ### 4.2 Field types
-| Source (TS / Firestore) | VKurse (Java / Postgres) |
+| Source (TS / Firestore) | Vkurse (Java / Postgres) |
 |---|---|
 | `string` | `String` + `VARCHAR`/`TEXT` |
 | `number` (count) | `int`/`long` + `INT`/`BIGINT` |
 | `number` (money, credits) | `Money` (`BigDecimal`, scale 2), or `BigDecimal` for non-money decimals; **never `double`** |
-| `Amount { value, currency }` (in `pricing/`) | `ru.vkurse.pricing.Money` record, `@Embedded` → `<field>_value`, `<field>_currency` columns |
+| `Amount { value, currency }` (in `pricing/`) | `space.vkurse.core.money.Money` record, `@Embedded` → `<field>_value`, `<field>_currency` columns |
 | `Date` | `Instant` + `TIMESTAMPTZ`; `LocalDate` for dates without time |
 | `moment()`, `new Date()` | In an application service: `clock.instant()` (the injected `Clock`), never `Instant.now()`. In an aggregate: an `Instant now` parameter |
 | IANA timezone string | `ZoneId` (a `String` column, converted in code) |
@@ -114,7 +114,7 @@ Java can't derive types from other types, and a request is not a patch of fields
 ### 4.5 Serialization (class-transformer → response records)
 An aggregate is never serialized. A controller maps it to a response record (`CourseResponse.of(course)`), which lists exactly the fields that audience sees.
 
-| class-transformer | VKurse |
+| class-transformer | Vkurse |
 |---|---|
 | `@Expose()` on every field | A component of the response record |
 | `excludeExtraneousValues: true` | The default: unknown JSON properties are ignored, and request records only declare the allowed fields |
@@ -129,7 +129,7 @@ An aggregate is never serialized. A controller maps it to a response record (`Co
 There is no generic CRUD service and no query object. Each source call becomes either a named repository method or an aggregate method.
 
 ### 5.1 Method mapping
-| Source | VKurse |
+| Source | Vkurse |
 |---|---|
 | `findById_({ id })` / `findOne_({ query })` | `repository.findById(id)` / a named finder (`findByEmail(email)`) → `Optional<A>` (never `null`) |
 | `findMany({ session, query })` | A named finder with the scope in its arguments: `findLiveByUser(userId, now, limit, offset)` |
@@ -150,7 +150,7 @@ There is no generic CRUD service and no query object. Each source call becomes e
 ### 5.2 Query mapping
 Queries are JPQL in the repository implementation, one method per question the domain asks.
 
-| Source `EntityQuery` | VKurse |
+| Source `EntityQuery` | Vkurse |
 |---|---|
 | `{ match: { status: 'active' } }` | `WHERE c.status = :status` behind `findActive…` |
 | `'=='`, `'!='`, `'<'`, `'in'`, `'not-in'` | JPQL operators |
@@ -165,7 +165,7 @@ A value object with a converter can be a query parameter as it is (`.setParamete
 ### 5.3 Hooks
 The source's hooks are where its rules hide. None of them survives as a hook.
 
-| Source | VKurse |
+| Source | Vkurse |
 |---|---|
 | `@PreHook('insert')` setting defaults, owner, timestamps | The aggregate's factory (defaults, owner); `AggregateRoot` and `JpaAggregateRepository.save` (timestamps) |
 | `@PreHook('update')` checking or adjusting the change | The aggregate method that makes the change |
@@ -175,10 +175,10 @@ The source's hooks are where its rules hide. None of them survives as a hook.
 | Extended contexts (`BusinessFindContext` with a required `business`) | Explicit arguments (`schoolId`) to the use case and the finder |
 | `postHook` on insert calling another module | An event the other module listens to (section 9). This avoids circular dependencies and survives crashes |
 
-⚠️ **Security difference.** In the source, user scoping was added only to `find`/`watch` hooks, so updates and deletes by id were **not** scoped. In VKurse every use case for a user takes the `userId` and checks ownership before it calls the aggregate: there is no unscoped "update by id" to reach for.
+⚠️ **Security difference.** In the source, user scoping was added only to `find`/`watch` hooks, so updates and deletes by id were **not** scoped. In Vkurse every use case for a user takes the `userId` and checks ownership before it calls the aggregate: there is no unscoped "update by id" to reach for.
 
 ### 5.4 Deleting
-The source soft-deleted everything into `_bin` collections. In VKurse each aggregate says what ending means: a deleted `User` keeps its row with `deletedAt` (and its repository never returns it); a `Session` is revoked (`revokedAt`); a used `OtpChallenge` is removed. Pick per aggregate, name the method for it, and use a partial unique index (`WHERE deleted_at IS NULL`) when a soft-deleted row must not block a new one.
+The source soft-deleted everything into `_bin` collections. In Vkurse each aggregate says what ending means: a deleted `User` keeps its row with `deletedAt` (and its repository never returns it); a `Session` is revoked (`revokedAt`); a used `OtpChallenge` is removed. Pick per aggregate, name the method for it, and use a partial unique index (`WHERE deleted_at IS NULL`) when a soft-deleted row must not block a new one.
 
 ## 6. Controllers
 
@@ -186,8 +186,8 @@ The source soft-deleted everything into `_bin` collections. In VKurse each aggre
 |---|---|
 | `@Controller('items')` | `@RestController @RequestMapping("/items")`, class package-private |
 | `@UseGuards(BearerGuard)` | Nothing: every route is authenticated by default. Public routes are listed in the service's `SecurityConfig` |
-| `@GetSession() session: UserSession` | `@GetSession UserSession session` (a `@AuthenticationPrincipal` meta-annotation in `libs/common`, the same in every service) |
-| `session.user.role`, `session.user.name` | `UserSession` carries `userId()`, `sessionId()` and `role()`, read from the access token. Load the user with `UserService` when you need more (in `core`) |
+| `@GetSession() session: UserSession` | `@GetSession UserSession session` (a `@AuthenticationPrincipal` meta-annotation in `libs/core`, the same in every service) |
+| `session.user.role`, `session.user.name` | `UserSession` carries `userId()`, `sessionId()` and `role()`, read from the access token. Load the user with `UserService` when you need more (in `platform`) |
 | `@UseGuards(BearerGuard, AdminGuard)` | `@AdminOnly` (`@PreAuthorize("hasRole('ADMIN')")`) |
 | `@UsePipes(new ValidationPipe())` + `@Body() data` | `@Valid @RequestBody CreateXxxRequest data` |
 | `@Param('id') id: string` | `@PathVariable UUID id` (an invalid UUID becomes a 400 automatically) |
@@ -199,7 +199,7 @@ The source soft-deleted everything into `_bin` collections. In VKurse each aggre
 | WebSocket gateways (socket.io) | Not ported yet: Spring WebSocket/STOMP or SSE when a module needs it |
 
 ### Responses
-| Source | VKurse |
+| Source | Vkurse |
 |---|---|
 | `return { value }` | `return XxxResponse.of(aggregate);` |
 | `return { value: items }` | `return items.stream().map(XxxResponse::of).toList();` |
@@ -209,7 +209,7 @@ The source soft-deleted everything into `_bin` collections. In VKurse each aggre
 
 ## 7. Errors
 
-| Source | VKurse |
+| Source | Vkurse |
 |---|---|
 | `ClientError(code, message, records)` | `ClientException(status, code, message, records)` |
 | `NotFoundError`, `ForbiddenError`, `ConflictError`, `BadRequestError`, `UnauthorizedError` | `NotFoundException`, `ForbiddenException`, `ConflictException`, `BadRequestException`, `UnauthorizedException` |
@@ -224,14 +224,14 @@ The error body changed shape:
 ```json
 // source (HTTP 200)
 { "error": { "code": "not-found", "message": "Course not found" } }
-// VKurse (HTTP 404, application/problem+json)
+// Vkurse (HTTP 404, application/problem+json)
 { "status": 404, "title": "Not Found", "detail": "Course not found", "instance": "/courses/…", "code": "not-found" }
 ```
 Validation errors keep the same `constraints` map, now as a top-level field next to `code: "validation-error"`.
 
 ## 8. Logging
 
-| Source | VKurse |
+| Source | Vkurse |
 |---|---|
 | `protected readonly logger = new Logger(X.name)` | `private static final Logger log = LoggerFactory.getLogger(X.class);` |
 | `logger.error('msg', error.stack ?? error.message ?? error.toString())` | `log.error("msg", e)`: the exception last, and SLF4J prints the stack |
@@ -242,7 +242,7 @@ Validation errors keep the same `constraints` map, now as a top-level field next
 
 ## 9. Async work, events and scheduling
 
-| Source | VKurse |
+| Source | Vkurse |
 |---|---|
 | `async` / `await`, `Promise<T>` | Plain blocking code returning `T`; virtual threads handle concurrency |
 | `Promise.all([...])` of I/O calls | Sequential calls, unless the latency really matters; then `Executors.newVirtualThreadPerTaskExecutor()` |
@@ -255,7 +255,7 @@ Events are records implementing `DomainEvent`, in the publishing module's `domai
 
 ## 10. Configuration, HTTP clients, i18n, templates
 
-| Source | VKurse |
+| Source | Vkurse |
 |---|---|
 | `.env` + `.env.${NODE_ENV}` | `.env` (local only, imported by `application.yaml`) + profiles `application-{dev,prod}.yaml` |
 | `NODE_ENV` | `SPRING_PROFILES_ACTIVE` (default `dev`) |
@@ -269,10 +269,10 @@ Events are records implementing `DomainEvent`, in the publishing module's `domai
 
 ## 11. Firestore → Postgres
 
-| Firestore habit | Postgres / VKurse |
+| Firestore habit | Postgres / Vkurse |
 |---|---|
 | Schemaless documents | Every field is a column, added in a migration. A new optional field is a nullable column; a new required field needs a `DEFAULT` or a backfill |
-| Collections | Plural `snake_case` tables in the service's own schema (`core`) |
+| Collections | Plural `snake_case` tables in the service's own schema (`platform`) |
 | `_locks` | `shedlock` |
 | `_db_migrations` | `flyway_schema_history` |
 | `_{collection}_bin` | None: see section 5.4 |
@@ -286,13 +286,13 @@ Events are records implementing `DomainEvent`, in the publishing module's `domai
 
 ## 12. Auth
 
-The source's `auth` module is ported as the `auth` module of `services/core` (see its README). Only email OTP, Google and Apple are ported.
+The source's `auth` module is ported as the `auth` module of `services/platform` (see its README). Only email OTP, Google and Apple are ported.
 
-| Source | VKurse |
+| Source | Vkurse |
 |---|---|
-| `BearerGuard` (verify JWT → load session → `request.session`) | Spring Security resource server. `JwtResourceServer` (in `libs/common`) checks the JWT and builds the `UserSession` from its claims; in core, `SessionAuthenticationConverter` also checks that the session is live |
+| `BearerGuard` (verify JWT → load session → `request.session`) | Spring Security resource server. `JwtResourceServer` (in `libs/core`) checks the JWT and builds the `UserSession` from its claims; in platform, `SessionAuthenticationConverter` also checks that the session is live |
 | `JwtService.sign/verify` with `JWT_SECRET` fallbacks | `RsaJwtTokens`: RS256 with the required `VKURSE_AUTH_PRIVATE_KEY`, public key at `/.well-known/jwks.json`; the `aud` claim separates `access` and `refresh` tokens |
-| One shared secret for every backend | Only core holds the private key. Other services fetch the public key and verify locally |
+| One shared secret for every backend | Only platform holds the private key. Other services fetch the public key and verify locally |
 | `InvalidSessionError`, `ReloginRequiredError` | The same codes, `invalid-session` and `relogin-required`, now with HTTP 401 |
 | `auth.buildSession(user, apiKey)` | `SignInService.signIn(user, provider, userAgent)` → identity; for OAuth, `startExchange(...)` returns a one-time code instead |
 | `auth.refreshSession(sessionId)` (old refresh token stays valid) | `POST /auth/refresh` → `session.rotate(generation, now, ttl)` under a row lock: the refresh token is single-use, and a replay revokes the session |
@@ -323,7 +323,7 @@ The source has `*.spec.ts` with hand-written Firestore mocks. Don't port them. T
 7. **Write `web/`:** the controller and its request/response records (section 6); real statuses, no wrappers.
 8. **Configuration:** add a properties record for any env vars the module needs, with explicit placeholders in `application.yaml` and entries in `.env.example`.
 9. **Docs:** add the module `README.md` and update the service README.
-10. **Verify:** `./gradlew spotlessApply build`, `./gradlew :services:core:bootRun` (Hibernate validates the aggregates against the tables), then `curl` the endpoints and check the data in Supabase Studio.
+10. **Verify:** `./gradlew spotlessApply build`, `./gradlew :services:platform:bootRun` (Hibernate validates the aggregates against the tables), then `curl` the endpoints and check the data in Supabase Studio.
 
 ## 15. Source bugs you must not port
 
@@ -345,4 +345,4 @@ The source has `*.spec.ts` with hand-written Firestore mocks. Don't port them. T
 | OAuth tokens passed back in the redirect URL | A one-time exchange code, traded for tokens with `POST /auth/exchange` |
 | OAuth users linked by email, even an unverified one | Link by provider `sub`; link by email only when the provider marks it verified |
 | `/sessions` endpoints not scoped to the caller | `SessionService` takes the caller's `userId` in every method |
-| JWT secret with a hard-coded default, shared by everything that verifies tokens | A required private key only core holds; startup fails without it |
+| JWT secret with a hard-coded default, shared by everything that verifies tokens | A required private key only platform holds; startup fails without it |

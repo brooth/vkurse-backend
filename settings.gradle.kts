@@ -4,5 +4,5 @@ plugins {
 
 rootProject.name = "vkurse-backend"
 
-include("libs:common")
-include("services:core")
+include("libs:core")
+include("services:platform")

@@ -1,4 +1,0 @@
-logging:
-  level:
-    ru.vkurse: debug
-    org.hibernate.SQL: debug

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "Read(//private/tmp/**)",
+      "Read(//Users/brooth/Projects/**)",
+      "Bash"
+    ]
+  }
+}

@@ -8,12 +8,12 @@ plugins {
 
 val palantirJavaFormat = libs.versions.palantir.java.format.get()
 
-// Only projects with a build file (libs/common, services/core), not the `libs` and `services` folders.
+// Only projects with a build file (libs/core, services/platform), not the `libs` and `services` folders.
 configure(subprojects.filter { it.buildFile.exists() }) {
     apply(plugin = "java")
     apply(plugin = "com.diffplug.spotless")
 
-    group = "ru.vkurse"
+    group = "space.vkurse"
     version = "0.0.1-SNAPSHOT"
 
     repositories {

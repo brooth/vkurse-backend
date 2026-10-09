@@ -1,8 +1,8 @@
-# VKurse backend: rules for AI agents and developers
+# Vkurse backend: rules for AI agents and developers
 
 > **Microservices on Spring Boot 4 + Hibernate + Postgres, with a rich domain model (DDD). Read this file before any task.**
 
-Services live in [services/](services/) and share [libs/common](libs/common/README.md). The plan and milestones are in [docs/PLAN.md](docs/PLAN.md).
+Services live in [services/](services/) and share [libs/core](libs/core/README.md). The plan and milestones are in [docs/PLAN.md](docs/PLAN.md).
 
 ## Critical rules
 
@@ -10,7 +10,7 @@ Services live in [services/](services/) and share [libs/common](libs/common/READ
 Every source file starts with:
 ```java
 /*
- * Copyright (C) VKurse - All Rights Reserved
+ * Copyright (C) vkurse.space - All Rights Reserved
  * Unauthorized copying of this file, via any medium is strictly prohibited
  * Proprietary and confidential
  */
@@ -37,14 +37,14 @@ log.error("Failed to renew subscription: " + e.getMessage());       // ❌ loses
 - Singular for utilities and ports: `clock`, `locks`, `tokens`, `mailer`.
 
 ### 5. No conditional wiring
-Every bean always loads; don't use `@ConditionalOnProperty` for features. Required settings go in a `@ConfigurationProperties @Validated` record (see [CoreProperties](services/core/src/main/java/ru/vkurse/core/CoreProperties.java)), so a missing value stops startup.
+Every bean always loads; don't use `@ConditionalOnProperty` for features. Required settings go in a `@ConfigurationProperties @Validated` record (see [PlatformProperties](services/platform/src/main/java/space/vkurse/platform/PlatformProperties.java)), so a missing value stops startup.
 Document each property with a `@param` tag in the record's javadoc: the configuration processor turns it into the hint the IDE shows in `application.yaml`.
 
 ### 6. RU region
 The project launches in Russia: defaults are `ru` and `RUB` only. Never default to `en` or `USD`.
 
 ### 7. Money
-Money is `ru.vkurse.common.money.Money` (`BigDecimal` + currency, scale 2), never `double`. Fields of type `Money` are named `amount` or `*Amount` (`priceAmount`, `balanceAmount`).
+Money is `space.vkurse.core.money.Money` (`BigDecimal` + currency, scale 2), never `double`. Fields of type `Money` are named `amount` or `*Amount` (`priceAmount`, `balanceAmount`).
 
 ### 8. Balance-first payment rule (billing)
 When charging a school, take `min(balance, total)` from the school balance first, and charge only the rest through YooKassa. Skip YooKassa entirely if nothing remains.
@@ -58,23 +58,23 @@ There are no automated tests until milestone M13. Verify changes by hand (see "R
 ### 11. Docs
 Keep the service README and the module READMEs up to date in every change.
 
-Also keep [docs/nest_js_migration.md](docs/nest_js_migration.md) current. When your work reveals a new difference between NestJS and VKurse (a mapping, pitfall or source bug, or a convention that changed), add it to the guide **in the same change**.
+Also keep [docs/nest_js_migration.md](docs/nest_js_migration.md) current. When your work reveals a new difference between NestJS and Vkurse (a mapping, pitfall or source bug, or a convention that changed), add it to the guide **in the same change**.
 
 ---
 
 ## Services
 
 - A service owns its data: one Postgres schema, its own Flyway migrations. No service reads another service's tables.
-- `core` is the only service that issues tokens. Every other service verifies access tokens with `JwtResourceServer` from `libs/common` (core's keys at `/.well-known/jwks.json`) and makes no call to core per request.
+- `platform` is the only service that issues tokens. Every other service verifies access tokens with `JwtResourceServer` from `libs/core` (platform's keys at `/.well-known/jwks.json`) and makes no call to platform per request.
 - A token is trusted until it expires (15 minutes). Don't build anything that needs a sign-out or a role change to reach another service faster than that.
-- `libs/common` holds only what at least two services need, or what is a contract between services. No business rules.
+- `libs/core` holds only what at least two services need, or what is a contract between services. No business rules.
 
 ## Module structure
 
-A service is split into modules, one package each under the service's root (`ru.vkurse.core.user`). A module has four layers:
+A service is split into modules, one package each under the service's root (`space.vkurse.platform.user`). A module has four layers:
 
 ```
-ru/vkurse/core/course/
+space/vkurse/platform/course/
 ├── domain/
 │   ├── Course.java             # aggregate (@Entity): state + the rules that change it
 │   ├── CourseTitle.java        # value object
@@ -93,7 +93,7 @@ ru/vkurse/core/course/
 
 | Layer | May use |
 |---|---|
-| `domain` | `libs/common`, other modules' `domain`. No Spring beans, no `EntityManager`, no HTTP types |
+| `domain` | `libs/core`, other modules' `domain`. No Spring beans, no `EntityManager`, no HTTP types |
 | `application` | its `domain`, other modules' `application` |
 | `infrastructure` | everything in its module |
 | `web` | `application`, and `domain` types to read from |
@@ -106,7 +106,7 @@ ru/vkurse/core/course/
 - **Created by a static factory** named for the event (`User.register(…)`, `Session.start(…)`), which calls a private constructor that calls `super(now)`. Add a `protected` no-arg constructor for Hibernate.
 - **Rules live in the aggregate**, not in a service: expiry, attempt limits, state transitions, what may change. If a service reads a field, decides, and writes a field, move that into a method.
 - **Time is a parameter** (`Instant now`): an aggregate never calls a clock. The application service passes `clock.instant()`.
-- A rule the client broke throws a `ClientException` from `libs/common` (`BadRequestException`, or the module's own in `{Module}Errors`). A programming mistake throws `IllegalArgumentException`/`IllegalStateException`.
+- A rule the client broke throws a `ClientException` from `libs/core` (`BadRequestException`, or the module's own in `{Module}Errors`). A programming mistake throws `IllegalArgumentException`/`IllegalStateException`.
 - An aggregate raises events with `raise(new CoursePublished(getId()))`. They are published when it is saved, in the same transaction.
 - Aggregates reference each other **by id** (a `UUID` column). No `@ManyToOne`/`@OneToMany` between aggregates.
 - Ids are `UUID` (v7), assigned when the aggregate is created. Never assign one by hand.
@@ -152,7 +152,7 @@ A value with rules of its own is a record that can't exist in an invalid state: 
 
 ### Repositories
 - The **interface** is in `domain` and speaks the domain's language: `findByEmail(email)`, `findLiveByUser(userId, now)`. No generic query objects, no field-name strings.
-- The **implementation** is in `infrastructure`, extends `JpaAggregateRepository<A>` (from `libs/common`) and is package-private. It is the only code that uses the `EntityManager`; queries are JPQL. Don't write Spring Data repositories (`JpaRepository`).
+- The **implementation** is in `infrastructure`, extends `JpaAggregateRepository<A>` (from `libs/core`) and is package-private. It is the only code that uses the `EntityManager`; queries are JPQL. Don't write Spring Data repositories (`JpaRepository`).
 - **Call `save(aggregate)` after every change.** It inserts or stamps `updatedAt`, flushes, and publishes the aggregate's events.
 - When two requests may change the same aggregate and the outcome matters (refresh tokens, attempt counters, money), load it with `findByIdForUpdate` and let the aggregate decide. Don't hide a rule in a conditional `UPDATE`.
 - Bulk statements are for cleanup of rows nobody holds (`deleteExpired(now)`).
@@ -197,7 +197,7 @@ class CourseController {
 ```
 
 ### Errors
-Throw the exceptions from `ru.vkurse.common.error.Errors`. `ErrorHandler` turns them into RFC 9457 bodies with a `code`:
+Throw the exceptions from `space.vkurse.core.error.Errors`. `ErrorHandler` turns them into RFC 9457 bodies with a `code`:
 
 | Class | Status | `code` |
 |---|---|---|
@@ -223,7 +223,7 @@ A module's own errors are subclasses in `domain/{Module}Errors.java` (`AuthError
 
 ## NestJS migration rules
 
-Some VKurse modules are ported from a NestJS + Firestore codebase. **Before porting any NestJS code, read [docs/nest_js_migration.md](docs/nest_js_migration.md) in full.**
+Some Vkurse modules are ported from a NestJS + Firestore codebase. **Before porting any NestJS code, read [docs/nest_js_migration.md](docs/nest_js_migration.md) in full.**
 
 The traps that matter most:
 - **Port behavior, not code.** The source is anemic CRUD with hooks; find the rules in its services and hooks and give them to an aggregate. Never copy the source project's name, URLs, headers or secrets.
@@ -237,10 +237,10 @@ The traps that matter most:
 ## Running locally
 ```bash
 supabase start                                    # Postgres :54322, Studio :54323, Mailpit :54324
-cp services/core/.env.example services/core/.env  # first time only; fill in VKURSE_AUTH_PRIVATE_KEY
-./gradlew :services:core:bootRun                  # http://localhost:8080
+cp services/platform/.env.example services/platform/.env  # first time only; fill in VKURSE_AUTH_PRIVATE_KEY
+./gradlew :services:platform:bootRun                  # http://localhost:8080
 ./gradlew spotlessApply                           # format + headers (run before finishing a task)
 ```
 Gradle needs a JDK 17+ to start (`JAVA_HOME`); it downloads JDK 25 for the build itself.
 
-Checks: `curl localhost:8080/actuator/health`, data in Supabase Studio (`http://127.0.0.1:54323`, schema `core`), emails in Mailpit (`http://127.0.0.1:54324`). The environment variables are listed in each service's README.
+Checks: `curl localhost:8080/actuator/health`, data in Supabase Studio (`http://127.0.0.1:54323`, schema `platform`), emails in Mailpit (`http://127.0.0.1:54324`). The environment variables are listed in each service's README.
