@@ -99,7 +99,8 @@ Authors and curators get 403. A school the caller doesn't work in is 404.
 - A school connects with its **shop id and secret key** (YooKassa cabinet → Integration → API keys). We call the API as that shop, with HTTP basic authentication.
 - **The school must set our notification URL in its cabinet** (Integration → HTTP notifications), with the events `payment.succeeded`, `payment.canceled` and `refund.succeeded`. YooKassa's API for registering webhooks works only for partner applications with OAuth, which we don't use. A school that skips this still gets its payments settled, by the job, a minute or more later.
 - Payments are created with `capture: true` and a redirect confirmation, so a payment is either paid or not: nothing is held.
-- YooKassa has no error code for an amount below the minimum; it is recognised by the text of the description.
+- YooKassa has no error code for an amount below the minimum; it is recognised by the text of the description. Its test shop takes any amount.
+- A shop without receipts set up (`fiscalization_enabled: false`) accepts a payment that carries a receipt and ignores the receipt.
 - A new provider is a new `PaymentProvider` constant, a `MerchantCredentials` record, a `PaymentGateway` implementation and a webhook route.
 
 ## Endpoints
@@ -124,7 +125,7 @@ Authors and curators get 403. A school the caller doesn't work in is 404.
 - `PaymentResponse`: `id`, `createdAt`, `updatedAt`, `merchantId`, `schoolId`, `payerId`, `amount { value, currency }`, `description`, `purpose`, `referenceId`, `status` (`PENDING`, `SUCCEEDED`, `CANCELED`), `confirmationUrl` (while pending), `paidAt`, `canceledAt`, `cancellationReason`, `refundedAmount`.
 - `RefundResponse`: `id`, `createdAt`, `paymentId`, `amount`, `reason`, `requestedBy`, `status` (`PENDING`, `SUCCEEDED`, `CANCELED`).
 
-There is no endpoint that starts an ordinary payment: checkout (M7) calls `PaymentService.start`.
+There is no endpoint that starts an ordinary payment: the [commerce module](../commerce/README.md) starts one for an order (`POST /orders/{id}/pay`), with the purpose `order`.
 
 ## Tables
 

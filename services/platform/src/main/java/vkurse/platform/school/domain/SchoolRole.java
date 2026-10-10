@@ -56,6 +56,11 @@ public enum SchoolRole {
         return this == OWNER || this == ADMIN;
     }
 
+    /** Whether this role may set a course's offers and the school's promo codes, and see its orders. */
+    public boolean canManageSales() {
+        return this == OWNER || this == ADMIN;
+    }
+
     /**
      * Whether this role may invite someone as {@code target}, give a member that role, take it away, or remove a
      * member who has it. Nobody manages an owner, and an admin doesn't manage admins.

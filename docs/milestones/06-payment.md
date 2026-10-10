@@ -7,7 +7,7 @@
 | Part | State |
 |---|---|
 | `Merchant`: a school's account with a provider; connect, change, disable, disconnect; encrypted credentials | Done |
-| `PaymentGateway` port and the YooKassa adapter | Done. Verified against a local stand-in for the API; the real test shop is still to be checked (see below) |
+| `PaymentGateway` port and the YooKassa adapter | Done |
 | `Payment`: started for another module, settled only by the provider's answer | Done |
 | Notifications (webhooks) with an inbox; a job that asks the provider about pending payments | Done |
 | Refunds, whole and partial | Done |
@@ -59,7 +59,7 @@
 
 ## Verified by hand
 
-Against a local stand-in for the YooKassa API (a small script that answers `/me`, `/payments` and `/refunds` the way the API documents). **The real YooKassa test shop is not checked yet.**
+Against a local stand-in for the YooKassa API (a small script that answers `/me`, `/payments` and `/refunds` the way the API documents), which lets a payment be marked paid or canceled. What was checked with the real YooKassa test shop is in the next section.
 
 - **Done when:** a test payment is created → paid at the provider → a notification arrives → the payment is `SUCCEEDED`, with one inbox row. The same notification three more times, another event for the same payment, and the payer's `sync` leave the row untouched (same version and `updated_at`) and the inbox at one row.
 - A forged "succeeded" notification for a payment that is really pending changes nothing and leaves no inbox row; the real one after it settles the payment. A notification with an unknown payment id, an unreadable body, or sent to an unknown merchant gets 200 and changes nothing.
@@ -71,4 +71,13 @@ Against a local stand-in for the YooKassa API (a small script that answers `/me`
 - The return URL: a stranger's site and a look-alike host are refused.
 - Provider unreachable: starting a payment fails and leaves no row; a refund fails and frees its amount; connecting fails.
 - Startup: V6 applies.
-- Not verified: the real YooKassa API (its exact bodies, a real card payment, what a shop without receipts does with a receipt, its real notification); a payer who is not on the school's staff reading their own payment (nothing starts such a payment until M7); a payment that stays pending for hours or days; two notifications for one payment at the very same moment; an event reaching a listener (there is none yet).
+- Not verified: a payment that stays pending for hours or days; two notifications for one payment at the very same moment.
+
+## Verified with the real YooKassa test shop
+
+Done during M7, with a test shop's id and `test_` key, connected as a merchant of a test school.
+
+- Connecting: the real `/me` answers as the adapter expects (the account id, `test: true`); a wrong key → 400 `payment/merchant-rejected`. The key is in neither the response nor the database.
+- Creating a payment for an order, with a receipt, on a shop without receipts set up: accepted, with YooKassa's payment page as `confirmationUrl`. Asking again for the same order returns the same payment.
+- Asking about an unpaid payment: `PENDING`.
+- Not verified yet: a payment paid with a test card (the order then turning `PAID`), a real refund, and YooKassa's own notification, which can't reach a developer's machine without a tunnel.

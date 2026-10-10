@@ -8,6 +8,7 @@ package vkurse.platform.course.application;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
@@ -75,6 +76,12 @@ public class CatalogService {
                 .orElseThrow(CourseAccess::notFound);
         var courseId = card.course().getId();
         return new Page(card, sections.findByCourse(courseId), lessons.findPublishedByCourse(courseId));
+    }
+
+    /** A published course of a live school, by id; empty if there is none. For modules that sell or show courses. */
+    @Transactional(readOnly = true)
+    public Optional<CourseCard> publishedCourse(UUID courseId) {
+        return courses.findPublished(courseId);
     }
 
     /** A lesson anyone may read: a free preview of a published course. */

@@ -56,6 +56,7 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 | See courses and lessons | ✓ | ✓ | ✓ | ✓ |
 | Create, edit and publish courses | ✓ | ✓ | ✓ | |
 | Delete a course | ✓ | ✓ | | |
+| Manage offers and promo codes, see orders | ✓ | ✓ | | |
 | See merchants and payments | ✓ | ✓ | | |
 | Connect and change merchants, refund payments | ✓ | | | |
 | Delete the school, transfer it | ✓ | | | |
@@ -74,6 +75,7 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 
 **Students**
 - A user is a student of a school at most once. Being on the staff is separate, and a user may be both.
+- Someone who pays for a course of the school becomes its student (the [commerce module](../commerce/README.md) calls `enroll`).
 - The staff add a student by email; someone without an account gets one, as at a first sign-in (with the welcome email). Adding twice changes nothing.
 
 **Logo and file library** (the files are kept by the [storage module](../storage/README.md), which has the limits)

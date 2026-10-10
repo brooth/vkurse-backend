@@ -48,6 +48,7 @@ backend/
     ├── auth/
     ├── school/                  # School, SchoolMember (roles), SchoolInvitation, SchoolStudent, logo, file library
     ├── course/                  # Course, Section, Lesson (blocks in JSONB), catalog
+    ├── commerce/                # Offer, PromoCode, Order; checkout
     ├── payment/                 # Merchant, Payment, Refund, PaymentGateway port (YooKassa)
     └── storage/                 # StoredFile, FilePurpose, FileStorage port (Supabase Storage)
 ```
@@ -62,7 +63,7 @@ backend/
 
 ## Milestones (one module each, in order)
 
-M1 to M6 are done and live in `services/platform` (M1's foundation is now `libs/core`); M3 is described in [03-school.md](milestones/03-school.md) M4 in [04-storage.md](milestones/04-storage.md), M5 in [05-course.md](milestones/05-course.md) and M6 in [06-payment.md](milestones/06-payment.md). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
+M1 to M7 are done and live in `services/platform` (M1's foundation is now `libs/core`); M3 is described in [03-school.md](milestones/03-school.md) M4 in [04-storage.md](milestones/04-storage.md), M5 in [05-course.md](milestones/05-course.md), M6 in [06-payment.md](milestones/06-payment.md) and M7 in [07-commerce.md](milestones/07-commerce.md). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
 
 | # | Module | Scope | Done when |
 |---|---|---|---|

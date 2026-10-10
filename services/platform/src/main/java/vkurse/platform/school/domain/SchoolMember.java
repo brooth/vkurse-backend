@@ -92,6 +92,10 @@ public class SchoolMember extends AggregateRoot {
         ensure(role.canSeePayments());
     }
 
+    public void ensureCanManageSales() {
+        ensure(role.canManageSales());
+    }
+
     /** Checks that this member may invite someone to their school as {@code invited}. */
     public void ensureCanInvite(SchoolRole invited) {
         ensureAssignable(invited);
