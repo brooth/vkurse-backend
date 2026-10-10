@@ -41,6 +41,10 @@ files.delete(replacedFileId);
 
 A new kind of file is a new `FilePurpose` constant: whether it belongs to a school, its bucket, its folder, size limit and content types. The bucket limits follow at the next startup.
 
+## The gate
+
+Before it signs an upload for a school, or a link to a school's private file, the service asks the `SchoolStorageGate` port (`storage/domain`). The [billing module](../billing/README.md) implements it and refuses a school that owes Vkurse: 402 `billing/payment-required` for uploads, 402 `billing/suspended` for links after the grace period. Public files and a user's own files are never asked about. `usageBySchool()` and `usageOf(schoolId)` say how many bytes a school stores: its confirmed files that aren't deleted.
+
 ## Rules
 
 - **A file is used only after it is confirmed.** An upload starts `PENDING`. `confirm` reads the object's real size and content type from storage, and the file becomes `READY` only if the type is the declared one and the size fits the purpose. The stored `size` is then the real one. The content itself is not inspected.

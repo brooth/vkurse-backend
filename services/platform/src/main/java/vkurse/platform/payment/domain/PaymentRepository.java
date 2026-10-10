@@ -20,6 +20,7 @@ public interface PaymentRepository {
     Optional<Payment> findByProviderId(UUID merchantId, String providerPaymentId);
 
     /** A school's payments, newest first. */
+    /** The payments to a school's own merchants, newest first. Its payments to Vkurse are not among them. */
     List<Payment> findBySchool(UUID schoolId, int limit, int offset);
 
     /** The ids of pending payments it is time to ask the provider about, the longest overdue first. */

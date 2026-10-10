@@ -14,6 +14,9 @@ public interface MerchantRepository {
     Optional<Merchant> findById(UUID id);
 
     /** A school's merchants that are still connected, oldest first. */
+    /** Vkurse's own shop: the merchant of no school. */
+    Optional<Merchant> findPlatform();
+
     List<Merchant> findConnectedBySchool(UUID schoolId);
 
     /** A school's merchants that take payments now, oldest first. */

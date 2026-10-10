@@ -13,7 +13,7 @@ How to bring a module from a NestJS + Firestore codebase (the source style this 
 - **No source branding.** Never copy the source project's name, URLs, copyright headers, API keys, secrets or `.env` values. Every file gets the Vkurse header.
 - **Don't port known bugs** (section 15). If the source has a `TODO` stub (for example a `reserve()` that does nothing), implement it properly or leave it out and say so. Never port a stub silently.
 - **Don't port Firestore workarounds.** Search tokens, `_bin` collections, index JSON files, reads-before-writes ordering and `watch` all exist only because of Firestore (section 11).
-- **Keep the business rules.** RU region, the balance-first payment rule and the money naming carry over unchanged ([AGENTS.md](../AGENTS.md)).
+- **Keep the business rules.** RU region, the balance-only charge rule and the money naming carry over unchanged ([AGENTS.md](../AGENTS.md)).
 - **Record every deviation** from the source in the milestone doc (`docs/milestones/NN-*.md`).
 
 ## 2. Files and modules
@@ -348,6 +348,7 @@ The source has `*.spec.ts` with hand-written Firestore mocks. Don't port them. T
 | One shop for the whole backend, its keys read from `process.env` when the service is built; without them the feature silently switched off | A `Merchant` row per school with its own credentials, passed to the gateway on each call. Nothing is switched off by a missing setting |
 | A merchant's secrets (terminal password, access token) were plain fields of the entity, hidden from responses only by serialization groups | Credentials are a sealed value encrypted in one column (`CredentialCipher`); no response record has a field for them |
 | Payment metadata (`userId`, `amountRub`) read back from the provider decided who was credited and how much | Our own `Payment` row says who paid, to whom and how much; the provider's answer is only compared with it |
+| Spending was refused when the balance was too low, and the account kept lifetime totals and a saved payment method to charge automatically | A school's balance may go below zero (a debt that closes uploads, then reading); totals come from the ledger; no card is ever charged by us |
 | A hard-coded admin API key in code | Roles come from the database; secrets come from config |
 | Updates and deletes weren't scoped to the owner | Every use case for a user takes `userId` and checks ownership (section 5.3) |
 | Events emitted after the write, fire-and-forget (lost on a crash) | Modulith events, stored in the same transaction |

@@ -27,6 +27,9 @@ public interface SchoolMemberRepository {
     /** Whether the user owns a school that is not deleted. */
     boolean ownsLiveSchool(UUID userId);
 
+    /** The owner of a school. */
+    Optional<SchoolMember> findOwner(UUID schoolId);
+
     /** Removes the user from every school; for an account that is being deleted. */
     int deleteByUser(UUID userId);
 

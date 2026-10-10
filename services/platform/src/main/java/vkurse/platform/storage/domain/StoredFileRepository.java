@@ -8,6 +8,7 @@ package vkurse.platform.storage.domain;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -30,6 +31,12 @@ public interface StoredFileRepository {
             UUID schoolId, Set<FilePurpose> purposes, @Nullable String search, int limit, int offset);
 
     /** Files whose objects and rows may go: the deleted ones, and uploads that expired unconfirmed. Oldest first. */
+    /** The bytes of confirmed, not deleted files each school stores, by school id. */
+    Map<UUID, Long> sumSizeBySchool();
+
+    /** The bytes of confirmed, not deleted files a school stores. */
+    long sumSize(UUID schoolId);
+
     List<StoredFile> findRemovable(Instant now, int limit);
 
     StoredFile save(StoredFile file);

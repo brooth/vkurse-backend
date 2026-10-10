@@ -10,6 +10,7 @@ Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one modu
 | [`auth/`](src/main/java/vkurse/platform/auth/README.md) | Sessions, our JWTs, email OTP, Google and Apple sign-in, the security filter chain |
 | [`school/`](src/main/java/vkurse/platform/school/README.md) | Schools, their staff with roles, invitations, students, the logo and the file library |
 | [`course/`](src/main/java/vkurse/platform/course/README.md) | Courses, sections and lessons with block content, publishing, the public catalog with search |
+| [`billing/`](src/main/java/vkurse/platform/billing/README.md) | A school's balance at Vkurse, top-ups, and the daily charge for the storage it uses |
 | [`commerce/`](src/main/java/vkurse/platform/commerce/README.md) | A course's offers, a school's promo codes, orders and checkout |
 | [`learning/`](src/main/java/vkurse/platform/learning/README.md) | Students taking courses: enrollments, which lessons are open, progress, homework and its review, quizzes |
 | [`payment/`](src/main/java/vkurse/platform/payment/README.md) | A school's merchants (its accounts with payment providers), payments to them, refunds, provider notifications |
@@ -24,7 +25,7 @@ Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one modu
 
 Root classes: `PlatformApplication` (entry point), `PlatformProperties` (`vkurse.public-url`, `vkurse.web-url`).
 
-Notifications come from [`libs/core`](../../libs/core/README.md#notifications). This service adds the `notifications` table, the templates in `templates/notification/` (`otp-code`, `welcome`, `school-invitation`, `order-paid`, `course-granted`, `homework-accepted`, `homework-returned`) and their subjects in `messages.properties`.
+Notifications come from [`libs/core`](../../libs/core/README.md#notifications). This service adds the `notifications` table, the templates in `templates/notification/` (`otp-code`, `welcome`, `school-invitation`, `order-paid`, `course-granted`, `homework-accepted`, `homework-returned`, `billing-low-balance`, `billing-debt`, `billing-suspended`) and their subjects in `messages.properties`.
 
 Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{description}.sql` (schema `platform`), `templates/notification/`, `messages.properties` (Russian, the base bundle).
 
@@ -42,6 +43,8 @@ Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{descript
 | `VKURSE_STORAGE_PUBLIC_URL` | yes | The same API as a browser reaches it: upload, download and public links start with it |
 | `VKURSE_STORAGE_SERVICE_KEY` | yes | Supabase service role key. `.env.example` has the published local demo key |
 | `VKURSE_PAYMENT_ENCRYPTION_KEY` | yes | Encrypts schools' payment credentials in the database: 32 random bytes in Base64 (`openssl rand -base64 32`). Losing or changing it loses every connected merchant |
+| `VKURSE_PAYMENT_PLATFORM_SHOP_ID`, `VKURSE_PAYMENT_PLATFORM_SHOP_SECRET_KEY` | yes | Vkurse's own YooKassa shop, which schools top up their balance through. A key that starts with `test_` is a test shop's |
+| `VKURSE_PAYMENT_PLATFORM_SHOP_RECEIPTS`, `VKURSE_PAYMENT_PLATFORM_SHOP_VAT_CODE` | no | Whether YooKassa issues a 54-FZ receipt for each payment to that shop (default `false`), and its VAT code (default `1`) |
 | `VKURSE_AUTH_PRIVATE_KEY` | yes | RSA key that signs our tokens: PKCS#8 PEM, 2048 bits or more, newlines as `\n` |
 | `VKURSE_AUTH_KEY_ID` | yes | `kid` of that key |
 | `VKURSE_AUTH_SECRET` | yes | HMAC key for OTP and exchange code hashes, at least 32 characters |

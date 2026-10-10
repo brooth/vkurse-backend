@@ -65,6 +65,19 @@ class JpaSchoolMemberRepository extends JpaAggregateRepository<SchoolMember> imp
     }
 
     @Override
+    public Optional<SchoolMember> findOwner(UUID schoolId) {
+        return em
+                .createQuery(
+                        "SELECT m FROM SchoolMember m WHERE m.schoolId = :schoolId AND m.role = :owner",
+                        SchoolMember.class)
+                .setParameter("schoolId", schoolId)
+                .setParameter("owner", SchoolRole.OWNER)
+                .getResultList()
+                .stream()
+                .findFirst();
+    }
+
+    @Override
     public boolean ownsLiveSchool(UUID userId) {
         return !em.createQuery("""
                         SELECT m.id FROM SchoolMember m JOIN School s ON s.id = m.schoolId

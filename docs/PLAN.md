@@ -48,6 +48,7 @@ backend/
     ├── auth/
     ├── school/                  # School, SchoolMember (roles), SchoolInvitation, SchoolStudent, logo, file library
     ├── course/                  # Course, Section, Lesson (blocks in JSONB), catalog
+    ├── billing/                 # BillingAccount, LedgerEntry, StorageUsage, StoragePrice; top-ups, the daily storage charge
     ├── commerce/                # Offer, PromoCode, Order; checkout
     ├── learning/                # Enrollment, lesson opening (drip, stop), progress, homework, quizzes
     ├── payment/                 # Merchant, Payment, Refund, PaymentGateway port (YooKassa)
@@ -64,7 +65,7 @@ backend/
 
 ## Milestones (one module each, in order)
 
-M1 to M8 are done and live in `services/platform` (M1's foundation is now `libs/core`); M3 is described in [03-school.md](milestones/03-school.md) M4 in [04-storage.md](milestones/04-storage.md), M5 in [05-course.md](milestones/05-course.md), M6 in [06-payment.md](milestones/06-payment.md), M7 in [07-commerce.md](milestones/07-commerce.md) and M8 in [08-learning.md](milestones/08-learning.md). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
+M1 to M10 are done and live in `services/platform` (M1's foundation is now `libs/core`); M3 is described in [03-school.md](milestones/03-school.md) M4 in [04-storage.md](milestones/04-storage.md), M5 in [05-course.md](milestones/05-course.md), M6 in [06-payment.md](milestones/06-payment.md), M7 in [07-commerce.md](milestones/07-commerce.md), M8 in [08-learning.md](milestones/08-learning.md) and M10 in [10-billing.md](milestones/10-billing.md). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
 
 | # | Module | Scope | Done when |
 |---|---|---|---|
@@ -77,7 +78,7 @@ M1 to M8 are done and live in `services/platform` (M1's foundation is now `libs/
 | M7 | **Commerce** | `Offer`, `Order` lifecycle, promo codes, checkout, `OrderPaid` event | Student pays with a test card, and the order becomes PAID |
 | M8 | **Learning** | `Enrollment`, lesson unlock (drip/stop lessons), progress, homework + curator review, quizzes | Paid student progresses, and accepted homework unlocks the next lesson |
 | M9 | **Notification & i18n** | In `libs/core`: channels with fallback (email via Thymeleaf ru templates, Telegram), send now or store and retry, `MessageSource`, the OTP email moved from `auth` to a template, a welcome email on sign-up. Push tokens are deferred. See [09-notification.md](milestones/09-notification.md) | Emails show up in Mailpit |
-| M10 | **Billing** | Storage usage metering per school, the storage price, school balance + ledger, top-ups through Vkurse's own shop, charges for usage (balance-first), what happens at zero balance. No plans, no subscriptions | A school tops up in the test shop, and a storage charge is taken from its balance |
+| M10 | **Billing** | Storage usage metering per school, the storage price, school balance + ledger, top-ups through Vkurse's own shop, charges for usage (from the balance only), what happens at zero balance. No plans, no subscriptions | A school tops up in the test shop, and a storage charge is taken from its balance |
 | M11 | **Admin** | `/admin/**` for users, schools, storage prices, payments and balance adjustments; SQL-view reports | Admin can manage everything above |
 | M12 | **Monitoring** | Actuator, Micrometer, OpenTelemetry → Grafana LGTM, JSON logs, Telegram error appender, admin insights | Traces and metrics visible in Grafana |
 | M13 | **Tests & CI** | Testcontainers, WireMock, Modulith scenario tests, ArchUnit rules, GitHub Actions, image build | CI is green |
@@ -86,6 +87,7 @@ M1 to M8 are done and live in `services/platform` (M1's foundation is now `libs/
 **Optional later:** Kafka (Modulith `@Externalized`), Kubernetes/Helm, Spring AI with YandexGPT/GigaChat for homework pre-review, a Telegram bot for students.
 
 ## Money & payment principles
+- **Vkurse charges a school only from its balance.** What the balance can't cover is a debt; no card is charged by us.
 - **Balance changes are atomic.** The row lock (or atomic `UPDATE … SET balance = balance + ?`) and the ledger row go in one transaction.
 - **Webhooks are idempotent.** An inbox table with a unique key ensures a retried notification is processed once.
 - **YooKassa `Idempotence-Key` is deterministic**, derived from our own payment id, so a retried request never creates a second payment.

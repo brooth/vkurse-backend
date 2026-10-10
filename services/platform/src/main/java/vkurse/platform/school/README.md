@@ -88,6 +88,7 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 - A video is uploaded in pieces that can resume: its `UploadResponse` has `resumable` instead of `uploadUrl` (see the [storage module](../storage/README.md#rules)).
 - A file that a lesson shows can't be deleted: 409 `course/file-in-use`.
 - Deleting a school keeps its logo and files.
+- A school that owes Vkurse for storage can't upload (402 `billing/payment-required`), and after 14 days its library links stop (402 `billing/suspended`); see the [billing module](../billing/README.md).
 
 ## Endpoints
 

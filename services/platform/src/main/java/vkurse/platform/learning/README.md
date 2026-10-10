@@ -47,6 +47,7 @@ It depends on [`course`](../course/README.md) (what is studied), [`commerce`](..
 
 **Homework**
 - An answer is text (Markdown, at most 20 000 characters), files (at most 10), or both. Files are uploaded in three steps, like the school's library, with the purpose `HOMEWORK_FILE` (50 MB, the library's types). They are kept for the school and are not in its library. Only the student's own confirmed uploads can be attached.
+- A homework upload is refused with 402 `billing/payment-required` while the school owes Vkurse for storage, and links to lesson and homework files with 402 `billing/suspended` after 14 days of that ([billing](../billing/README.md)).
 - A student answers when they haven't yet, or when their last answer was given back; otherwise 409 `learning/homework-not-expected`. An answer that waits for review can't be changed.
 - **Every staff role reviews**, for every course of the school: accept (a comment is optional) or give back (a comment is required). A reviewed answer can't be reviewed again: 409 `learning/already-reviewed`.
 - Each answer is kept, so a lesson's answers are the history of what was handed in and what the staff said. The student is emailed on each review (`homework-accepted`, `homework-returned`).

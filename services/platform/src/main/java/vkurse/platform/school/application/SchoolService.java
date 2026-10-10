@@ -7,6 +7,7 @@ package vkurse.platform.school.application;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
@@ -52,6 +53,18 @@ public class SchoolService {
     }
 
     /** A school as anyone may see it. */
+    /** A school that isn't deleted, for the system: it checks nothing about a caller. */
+    @Transactional(readOnly = true)
+    public Optional<School> find(UUID schoolId) {
+        return schools.findById(schoolId);
+    }
+
+    /** The user who owns a school, for the system. */
+    @Transactional(readOnly = true)
+    public Optional<UUID> findOwnerId(UUID schoolId) {
+        return members.findOwner(schoolId).map(SchoolMember::getUserId);
+    }
+
     @Transactional(readOnly = true)
     public School getBySlug(String slug) {
         return schools.findBySlug(new Slug(slug)).orElseThrow(() -> new NotFoundException("School not found"));

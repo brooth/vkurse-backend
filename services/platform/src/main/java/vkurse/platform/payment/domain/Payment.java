@@ -98,6 +98,7 @@ public class Payment extends AggregateRoot {
 
     private Payment(
             Merchant merchant,
+            UUID schoolId,
             UUID payerId,
             Money amount,
             String description,
@@ -107,7 +108,7 @@ public class Payment extends AggregateRoot {
             Instant now) {
         super(now);
         this.merchantId = merchant.getId();
-        this.schoolId = merchant.getSchoolId();
+        this.schoolId = schoolId;
         this.payerId = payerId;
         this.amount = amount;
         this.description = description;
@@ -128,6 +129,45 @@ public class Payment extends AggregateRoot {
             UUID referenceId,
             ReturnUrl returnUrl,
             Instant now) {
+        var schoolId = merchant.getSchoolId();
+        if (schoolId == null) {
+            throw new IllegalArgumentException("A payment to Vkurse's own shop names the school that pays");
+        }
+        return start(merchant, schoolId, payerId, amount, description, purpose, referenceId, returnUrl, now);
+    }
+
+    /**
+     * Starts a payment of a school to Vkurse's own shop. It is the paying school's payment: its staff see it as they
+     * see the payments to their own merchants.
+     *
+     * @param schoolId the school that pays
+     */
+    public static Payment toPlatform(
+            Merchant platform,
+            UUID schoolId,
+            UUID payerId,
+            Money amount,
+            String description,
+            String purpose,
+            UUID referenceId,
+            ReturnUrl returnUrl,
+            Instant now) {
+        if (!platform.isPlatform()) {
+            throw new IllegalArgumentException("Not Vkurse's own shop");
+        }
+        return start(platform, schoolId, payerId, amount, description, purpose, referenceId, returnUrl, now);
+    }
+
+    private static Payment start(
+            Merchant merchant,
+            UUID schoolId,
+            UUID payerId,
+            Money amount,
+            String description,
+            String purpose,
+            UUID referenceId,
+            ReturnUrl returnUrl,
+            Instant now) {
         merchant.ensureTakesPayments();
         if (amount.isZero() || amount.isNegative()) {
             throw new BadRequestException("The amount must be more than zero");
@@ -139,7 +179,7 @@ public class Payment extends AggregateRoot {
         if (text.isEmpty() || text.length() > MAX_DESCRIPTION_LENGTH) {
             throw new BadRequestException("The description must have 1 to " + MAX_DESCRIPTION_LENGTH + " characters");
         }
-        return new Payment(merchant, payerId, amount, text, purpose, referenceId, returnUrl, now);
+        return new Payment(merchant, schoolId, payerId, amount, text, purpose, referenceId, returnUrl, now);
     }
 
     /** Starts a small payment an owner makes to check a merchant end to end. */

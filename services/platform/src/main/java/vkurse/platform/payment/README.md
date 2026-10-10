@@ -46,6 +46,15 @@ void on(PaymentSucceeded event) {
 
 A payment doesn't know what was bought. Its starter names a `purpose` and its own `referenceId`, and gets both back in `PaymentSucceeded`, `PaymentCanceled` and `PaymentRefunded`.
 
+## Vkurse's own shop
+
+One merchant belongs to no school: Vkurse's own shop, which schools pay Vkurse through (the [billing module](../billing/README.md) tops a balance up with it).
+- It is made at startup from `VKURSE_PAYMENT_PLATFORM_SHOP_ID` and `VKURSE_PAYMENT_PLATFORM_SHOP_SECRET_KEY`, and brought in line with them at every start. The credentials are encrypted like any merchant's. The provider is not asked at startup: a wrong key shows at the first payment. A key that starts with `test_` marks a test shop.
+- Receipts for it are `VKURSE_PAYMENT_PLATFORM_SHOP_RECEIPTS` and `…_VAT_CODE`.
+- Another module starts a payment to it with `PaymentService.startForPlatform(payerId, schoolId, …)`. The payment is the paying school's: its payer, owner and admins read and `sync` it. It is settled like any payment, and raises the same events.
+- **A school can't manage this merchant or refund a payment to it** (404, 403), and sees neither among its merchants and payments.
+- Its notification URL is `/payments/webhooks/yookassa/{id}`, with the id logged at startup; Vkurse sets it in its own YooKassa cabinet.
+
 ## Rules
 
 **Merchants**

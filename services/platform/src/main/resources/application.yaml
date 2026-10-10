@@ -124,6 +124,13 @@ vkurse:
     encryption-key: ${VKURSE_PAYMENT_ENCRYPTION_KEY}
     yookassa:
       url: https://api.yookassa.ru/v3
+    # Vkurse's own YooKassa shop: schools top up their balance through it.
+    platform-shop:
+      shop-id: ${VKURSE_PAYMENT_PLATFORM_SHOP_ID}
+      secret-key: ${VKURSE_PAYMENT_PLATFORM_SHOP_SECRET_KEY}
+      # Turn on when the shop has 54-FZ receipts set up; the VAT code is YooKassa's (1 to 12).
+      receipts-enabled: ${VKURSE_PAYMENT_PLATFORM_SHOP_RECEIPTS:false}
+      receipts-vat-code: ${VKURSE_PAYMENT_PLATFORM_SHOP_VAT_CODE:1}
   notification:
     mail-from: ${VKURSE_MAIL_FROM}
     telegram:

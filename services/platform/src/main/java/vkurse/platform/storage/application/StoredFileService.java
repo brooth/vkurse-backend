@@ -24,6 +24,7 @@ import vkurse.core.error.Errors.NotFoundException;
 import vkurse.platform.storage.domain.Download;
 import vkurse.platform.storage.domain.FilePurpose;
 import vkurse.platform.storage.domain.FileStorage;
+import vkurse.platform.storage.domain.SchoolStorageGate;
 import vkurse.platform.storage.domain.StorageErrors.UploadIncompleteException;
 import vkurse.platform.storage.domain.StoredFile;
 import vkurse.platform.storage.domain.StoredFileRepository;
@@ -40,16 +41,19 @@ import vkurse.platform.storage.domain.Upload;
 public class StoredFileService {
     private final StoredFileRepository files;
     private final FileStorage storage;
+    private final SchoolStorageGate gate;
     private final Clock clock;
     private final TransactionTemplate transaction;
 
     public StoredFileService(
             StoredFileRepository files,
             FileStorage storage,
+            SchoolStorageGate gate,
             Clock clock,
             PlatformTransactionManager transactionManager) {
         this.files = files;
         this.storage = storage;
+        this.gate = gate;
         this.clock = clock;
         this.transaction = new TransactionTemplate(transactionManager);
     }
@@ -61,6 +65,9 @@ public class StoredFileService {
      */
     public Upload requestUpload(
             FilePurpose purpose, @Nullable UUID schoolId, UUID uploadedBy, String name, String contentType, long size) {
+        if (schoolId != null) {
+            gate.ensureCanUpload(schoolId);
+        }
         var now = clock.instant();
         var file = StoredFile.request(
                 purpose,
@@ -141,6 +148,7 @@ public class StoredFileService {
         if (file.getPurpose().isPublic()) {
             return new Download(storage.publicUrl(file), null);
         }
+        ensureReadable(List.of(file));
         var expiresAt = clock.instant().plus(StoredFile.DOWNLOAD_TTL);
         return new Download(storage.signDownload(file, StoredFile.DOWNLOAD_TTL), expiresAt);
     }
@@ -150,6 +158,7 @@ public class StoredFileService {
      * image or a video is served to be shown, any other file to be saved. A file storage doesn't hold gets no link.
      */
     public Map<UUID, Download> links(Collection<StoredFile> shown) {
+        ensureReadable(shown);
         var now = clock.instant();
         var links = new HashMap<UUID, Download>();
         shown.stream()
@@ -169,6 +178,28 @@ public class StoredFileService {
             file.delete(clock.instant());
             files.save(file);
         });
+    }
+
+    /** How many bytes each school stores now, by school id: its confirmed files that aren't deleted. */
+    @Transactional(readOnly = true)
+    public Map<UUID, Long> usageBySchool() {
+        return files.sumSizeBySchool();
+    }
+
+    /** How many bytes a school stores now. */
+    @Transactional(readOnly = true)
+    public long usageOf(UUID schoolId) {
+        return files.sumSize(schoolId);
+    }
+
+    /** Checks with the gate that the schools of these private files may have them read now. */
+    private void ensureReadable(Collection<StoredFile> read) {
+        read.stream()
+                .filter(file -> !file.getPurpose().isPublic())
+                .map(StoredFile::getSchoolId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .forEach(gate::ensureCanRead);
     }
 
     private static NotFoundException notFound() {

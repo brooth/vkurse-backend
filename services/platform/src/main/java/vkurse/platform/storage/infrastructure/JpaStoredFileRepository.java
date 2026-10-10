@@ -7,7 +7,9 @@ package vkurse.platform.storage.infrastructure;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -75,6 +77,31 @@ class JpaStoredFileRepository extends JpaAggregateRepository<StoredFile> impleme
             query.setParameter("pattern", "%" + escapeLike(search) + "%");
         }
         return query.setMaxResults(limit).setFirstResult(offset).getResultList();
+    }
+
+    @Override
+    public Map<UUID, Long> sumSizeBySchool() {
+        var bySchool = new HashMap<UUID, Long>();
+        em.createQuery("""
+                        SELECT f.schoolId, SUM(f.size) FROM StoredFile f
+                        WHERE f.schoolId IS NOT NULL AND f.status = :ready AND f.deletedAt IS NULL
+                        GROUP BY f.schoolId
+                        """, Object[].class)
+                .setParameter("ready", StoredFile.Status.READY)
+                .getResultList()
+                .forEach(row -> bySchool.put((UUID) row[0], ((Number) row[1]).longValue()));
+        return bySchool;
+    }
+
+    @Override
+    public long sumSize(UUID schoolId) {
+        return em.createQuery("""
+                        SELECT COALESCE(SUM(f.size), 0) FROM StoredFile f
+                        WHERE f.schoolId = :schoolId AND f.status = :ready AND f.deletedAt IS NULL
+                        """, Long.class)
+                .setParameter("schoolId", schoolId)
+                .setParameter("ready", StoredFile.Status.READY)
+                .getSingleResult();
     }
 
     @Override

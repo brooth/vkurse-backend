@@ -1,0 +1,10 @@
+<!--/*
+  Copyright (C) vkurse.space - All Rights Reserved
+  Unauthorized copying of this file, via any medium is strictly prohibited
+  Proprietary and confidential
+*/-->
+<!--/* Params: name (the owner's name), schoolName, balance (rubles, as text), suspendsAt (a date, or empty), link (the web app). */-->
+<p style="margin:0 0 12px;">Здравствуйте, <span th:text="${name}">Имя</span>!</p>
+<p style="margin:0 0 12px;">Баланс школы «<span th:text="${schoolName}">Школа</span>» стал отрицательным: <span th:text="${balance}">0.00</span> ₽. Загрузка новых файлов остановлена.</p>
+<p style="margin:0 0 12px;">Если не пополнить баланс до <span th:text="${suspendsAt}">01.01.2026</span>, файлы и видео школы перестанут открываться у учеников. Ничего не удаляется: после пополнения всё заработает снова.</p>
+<p style="margin:0;"><a th:href="${link}" th:text="${link}">https://vkurse.ru</a></p>

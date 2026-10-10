@@ -33,7 +33,8 @@ public class Merchant extends AggregateRoot {
     /** How many merchants a school may have connected. */
     public static final int MAX_PER_SCHOOL = 5;
 
-    private UUID schoolId;
+    /** The school the merchant belongs to; {@code null} for Vkurse's own shop. */
+    private @Nullable UUID schoolId;
 
     @Enumerated(EnumType.STRING)
     private PaymentProvider provider;
@@ -60,7 +61,7 @@ public class Merchant extends AggregateRoot {
     protected Merchant() {}
 
     private Merchant(
-            UUID schoolId,
+            @Nullable UUID schoolId,
             PaymentProvider provider,
             String name,
             MerchantAccount account,
@@ -99,8 +100,45 @@ public class Merchant extends AggregateRoot {
                 schoolId, credentials.provider(), checkedName(name), account, cipher.seal(credentials), receipts, now);
     }
 
+    /**
+     * Vkurse's own shop: the one merchant that belongs to no school. Schools pay Vkurse through it. Its credentials
+     * come from the service's settings, so the provider isn't asked to confirm them.
+     */
+    public static Merchant platform(
+            String name,
+            MerchantCredentials credentials,
+            MerchantAccount account,
+            ReceiptSettings receipts,
+            CredentialCipher cipher,
+            Instant now) {
+        return new Merchant(
+                null, credentials.provider(), checkedName(name), account, cipher.seal(credentials), receipts, now);
+    }
+
+    /** Brings Vkurse's own shop in line with the service's settings. */
+    public void configure(
+            MerchantCredentials credentials,
+            MerchantAccount account,
+            ReceiptSettings receipts,
+            CredentialCipher cipher) {
+        if (!isPlatform()) {
+            throw new IllegalStateException("Only Vkurse's own shop is set from the settings");
+        }
+        this.provider = credentials.provider();
+        this.credentials = cipher.seal(credentials);
+        this.accountId = account.accountId();
+        this.testMode = account.testMode();
+        this.receipts = receipts;
+        this.status = Status.ACTIVE;
+    }
+
+    /** Whether this is Vkurse's own shop, not a school's. */
+    public boolean isPlatform() {
+        return schoolId == null;
+    }
+
     public boolean belongsTo(UUID schoolId) {
-        return this.schoolId.equals(schoolId);
+        return schoolId.equals(this.schoolId);
     }
 
     public void rename(String name) {

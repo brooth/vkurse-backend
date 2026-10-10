@@ -36,9 +36,12 @@ class JpaPaymentRepository extends JpaAggregateRepository<Payment> implements Pa
 
     @Override
     public List<Payment> findBySchool(UUID schoolId, int limit, int offset) {
-        return em.createQuery(
-                        "SELECT p FROM Payment p WHERE p.schoolId = :schoolId ORDER BY p.createdAt DESC, p.id DESC",
-                        Payment.class)
+        return em.createQuery("""
+                        SELECT p FROM Payment p
+                        WHERE p.schoolId = :schoolId
+                          AND p.merchantId IN (SELECT m.id FROM Merchant m WHERE m.schoolId = :schoolId)
+                        ORDER BY p.createdAt DESC, p.id DESC
+                        """, Payment.class)
                 .setParameter("schoolId", schoolId)
                 .setMaxResults(limit)
                 .setFirstResult(offset)

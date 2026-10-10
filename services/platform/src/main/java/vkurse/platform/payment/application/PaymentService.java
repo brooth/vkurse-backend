@@ -9,6 +9,7 @@ import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
@@ -16,6 +17,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import vkurse.core.error.Errors.ForbiddenException;
 import vkurse.core.error.Errors.NotFoundException;
 import vkurse.core.money.Money;
 import vkurse.core.web.Paging;
@@ -116,6 +118,38 @@ public class PaymentService {
     }
 
     /** Starts a small payment the school's owner makes to check a merchant end to end. */
+    /**
+     * Starts a payment of a school to Vkurse's own shop, for another module. Whether the payer may pay for that school
+     * is the caller's check, made before. The payment is the school's: its payer, owner and admins read and sync it.
+     *
+     * @param purpose what the starter calls this kind of payment; it comes back in the payment's events
+     * @param referenceId the starter's own id of what is paid for
+     */
+    public Payment startForPlatform(
+            UUID payerId,
+            UUID schoolId,
+            Money amount,
+            String description,
+            String purpose,
+            UUID referenceId,
+            String returnUrl) {
+        var back = ReturnUrl.of(returnUrl, properties.webUrl());
+        var platformId = Objects.requireNonNull(transaction.execute(status -> merchants
+                .findPlatform()
+                .orElseThrow(MerchantUnavailableException::new)
+                .getId()));
+        return begin(
+                payerId,
+                platformId,
+                platform -> Payment.toPlatform(
+                        platform, schoolId, payerId, amount, description, purpose, referenceId, back, clock.instant()));
+    }
+
+    /** A payment by id, for the module that started it. It checks nothing about a caller. */
+    public Optional<Payment> find(UUID paymentId) {
+        return Objects.requireNonNull(transaction.execute(status -> payments.findById(paymentId)));
+    }
+
     public Payment testPayment(UUID userId, UUID merchantId, Money amount, String returnUrl) {
         transaction.executeWithoutResult(status -> merchantAccess.manageable(userId, merchantId));
         var back = ReturnUrl.of(returnUrl, properties.webUrl());
@@ -159,6 +193,10 @@ public class PaymentService {
             var payment = payments.findByIdForUpdate(paymentId).orElseThrow(PaymentService::notFound);
             member(userId, payment.getSchoolId()).ensureCanManagePayments();
             var merchant = merchants.findById(payment.getMerchantId()).orElseThrow(MerchantUnavailableException::new);
+            if (merchant.isPlatform()) {
+                // A school's money at Vkurse is given back by Vkurse, not by the school.
+                throw new ForbiddenException("A payment to Vkurse can't be refunded by the school");
+            }
             var credentials = merchant.credentials(cipher);
             var refund = refunds.save(payment.refund(amount, reason, userId, clock.instant()));
             payments.save(payment);

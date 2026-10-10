@@ -59,6 +59,7 @@ It depends on [`school`](../school/README.md) (who is on the staff, with which r
 - **Which options are right is shown only to the staff.** The public preview and a student's lesson leave `correct` out (`LessonContent.forStudents()`).
 - A block's file must be a confirmed file of the same school's library (else 404), and of the kind the block is for (else 400).
 - **A file a lesson shows can't be deleted from the library**: 409 `course/file-in-use`. Lessons of a deleted course don't count.
+- Links are refused with 402 `billing/suspended` while the school has owed Vkurse for storage for more than 14 days ([billing](../billing/README.md)).
 - A lesson is published on its own, and needs content for it. Only published lessons appear outside the staff.
 - Blocks name files by id. The links are asked for separately (`…/links`), signed for a short time: a video for 6 hours, anything else for an hour. A video and an image are served to be shown, a file to be saved.
 

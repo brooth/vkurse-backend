@@ -6,6 +6,7 @@
 package vkurse.platform.payment.infrastructure;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
 import vkurse.core.persistence.JpaAggregateRepository;
@@ -17,6 +18,15 @@ class JpaMerchantRepository extends JpaAggregateRepository<Merchant> implements 
 
     JpaMerchantRepository() {
         super(Merchant.class);
+    }
+
+    @Override
+    public Optional<Merchant> findPlatform() {
+        return em
+                .createQuery("SELECT m FROM Merchant m WHERE m.schoolId IS NULL", Merchant.class)
+                .getResultList()
+                .stream()
+                .findFirst();
     }
 
     @Override

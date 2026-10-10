@@ -139,7 +139,12 @@ public class MerchantService {
     Merchant manageable(UUID userId, UUID merchantId) {
         var merchant =
                 merchants.findById(merchantId).filter(Merchant::isConnected).orElseThrow(MerchantService::notFound);
-        member(userId, merchant.getSchoolId()).ensureCanManagePayments();
+        var schoolId = merchant.getSchoolId();
+        if (schoolId == null) {
+            // Vkurse's own shop is nobody's to manage here.
+            throw notFound();
+        }
+        member(userId, schoolId).ensureCanManagePayments();
         return merchant;
     }
 

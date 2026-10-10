@@ -46,8 +46,8 @@ The project launches in Russia: defaults are `ru` and `RUB` only. Never default 
 ### 7. Money
 Money is `vkurse.core.money.Money` (`BigDecimal` + currency, scale 2), never `double`. Fields of type `Money` are named `amount` or `*Amount` (`priceAmount`, `balanceAmount`).
 
-### 8. Balance-first payment rule (billing)
-When charging a school, take `min(balance, total)` from the school balance first, and charge only the rest through YooKassa. Skip YooKassa entirely if nothing remains.
+### 8. Balance-only charges (billing)
+Vkurse charges a school only from its balance, and only through `BillingAccount`, which writes the ledger row with the change. What the balance can't cover is a debt (a balance below zero): never charge a card ourselves. Money comes in only by a top-up the school makes.
 
 ### 9. Types
 No raw types or unchecked casts without a one-line comment explaining why. Packages are `@NullMarked` (JSpecify): everything is non-null unless it is annotated `@Nullable`.
