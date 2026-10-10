@@ -46,6 +46,16 @@ public enum SchoolRole {
         return this == OWNER || this == ADMIN;
     }
 
+    /** Whether this role may connect and change the school's merchants, and refund payments. */
+    public boolean canManagePayments() {
+        return this == OWNER;
+    }
+
+    /** Whether this role may see the school's merchants and the payments made to it. */
+    public boolean canSeePayments() {
+        return this == OWNER || this == ADMIN;
+    }
+
     /**
      * Whether this role may invite someone as {@code target}, give a member that role, take it away, or remove a
      * member who has it. Nobody manages an owner, and an admin doesn't manage admins.

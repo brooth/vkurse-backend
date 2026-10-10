@@ -8,7 +8,7 @@ This is the **main plan**. Every milestone below gets its own detailed plan in `
 | Topic | Decision |
 |---|---|
 | Market | Russia only: YooKassa, RUB, `ru` by default, 54-FZ receipts. Russia's 152-FZ data law means prod runs in a RU cloud (Yandex Cloud, Selectel or Timeweb): self-hosted Supabase, or plain Postgres + S3-compatible storage |
-| Money flow | Each school connects **its own YooKassa shop** (credentials stored encrypted), and students pay the school directly. The **platform bills schools a SaaS subscription** through its own shop |
+| Money flow | Each school connects **its own merchants**: accounts with payment providers (YooKassa first; T-Bank, Robokassa later), with credentials stored encrypted. A student pays the school **directly**; Vkurse never receives or holds that money, so there are no payouts. **Vkurse charges a school only for storage** (mostly video), from a balance the school tops up through Vkurse's own shop. There are no plans or subscriptions |
 | Architecture | **Microservices** with a shared library (`libs/core`). `services/platform` owns users and auth and is the only token issuer. Each service owns one Postgres schema and its migrations; no service reads another's tables |
 | Model | **Rich domain model (DDD)**: aggregates own their rules and have no setters; modules are split into `domain` / `application` / `infrastructure` / `web`; repositories are explicit interfaces. See `AGENTS.md` |
 | Supabase | **Postgres + Storage** only. The services are the only data gateway; PostgREST is not exposed for our schemas |
@@ -48,6 +48,7 @@ backend/
     ├── auth/
     ├── school/                  # School, SchoolMember (roles), SchoolInvitation, SchoolStudent, logo, file library
     ├── course/                  # Course, Section, Lesson (blocks in JSONB), catalog
+    ├── payment/                 # Merchant, Payment, Refund, PaymentGateway port (YooKassa)
     └── storage/                 # StoredFile, FilePurpose, FileStorage port (Supabase Storage)
 ```
 - **Aggregates** are JPA entities without setters, created by a factory (`User.register(…)`) and changed by methods that keep their rules (`session.rotate(…)`, `otp.verify(…)`). They raise domain events, published when they are saved.
@@ -61,7 +62,7 @@ backend/
 
 ## Milestones (one module each, in order)
 
-M1 to M5 are done and live in `services/platform` (M1's foundation is now `libs/core`); M3 is described in [03-school.md](milestones/03-school.md) M4 in [04-storage.md](milestones/04-storage.md) and M5 in [05-course.md](milestones/05-course.md). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
+M1 to M6 are done and live in `services/platform` (M1's foundation is now `libs/core`); M3 is described in [03-school.md](milestones/03-school.md) M4 in [04-storage.md](milestones/04-storage.md), M5 in [05-course.md](milestones/05-course.md) and M6 in [06-payment.md](milestones/06-payment.md). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
 
 | # | Module | Scope | Done when |
 |---|---|---|---|
@@ -70,12 +71,12 @@ M1 to M5 are done and live in `services/platform` (M1's foundation is now `libs/
 | M3 | **School** | `SchoolEntity`, `SchoolMemberEntity` (OWNER/ADMIN/AUTHOR/CURATOR), invitations, `SchoolStudentEntity`, `SchoolOwnedEntityService`, role checks | Owner creates a school and invites an author, and the author sees it |
 | M4 | **Storage** | `FileStorage` port, Supabase Storage adapter (signed upload/download URLs), `StoredFile`, per-school paths | Upload and download through signed URLs |
 | M5 | **Course** | Course → Section → Lesson, sealed lesson content (JSONB), ordering, publishing, drip rules, stop lessons, catalog + search | Author publishes a course, and it appears in the catalog |
-| M6 | **Payment** | `PaymentGateway` port, YooKassa adapter, encrypted per-school credentials, `Payment`, idempotent webhook inbox, refunds, `PaymentSucceeded`/`PaymentCanceled` events | Test-shop webhook is processed exactly once, even when replayed |
+| M6 | **Payment** | `Merchant` (a school's account with a provider), `PaymentGateway` port, YooKassa adapter, encrypted credentials, `Payment`, idempotent webhook inbox, a job that asks the provider, refunds, `PaymentSucceeded`/`PaymentCanceled`/`PaymentRefunded` events | Test-shop webhook is processed exactly once, even when replayed |
 | M7 | **Commerce** | `Offer`, `Order` lifecycle, promo codes, checkout, `OrderPaid` event | Student pays with a test card, and the order becomes PAID |
 | M8 | **Learning** | `Enrollment`, lesson unlock (drip/stop lessons), progress, homework + curator review, quizzes | Paid student progresses, and accepted homework unlocks the next lesson |
 | M9 | **Notification & i18n** | In `libs/core`: channels with fallback (email via Thymeleaf ru templates, Telegram), send now or store and retry, `MessageSource`, the OTP email moved from `auth` to a template, a welcome email on sign-up. Push tokens are deferred. See [09-notification.md](milestones/09-notification.md) | Emails show up in Mailpit |
-| M10 | **Billing** | Plans with limits, school subscriptions, school balance + ledger, balance-first rule, autopay, renewal job | Renewal charges a school through autopay in the test shop |
-| M11 | **Admin** | `/admin/**` for users, schools, plans, subscriptions, payments and balance adjustments; SQL-view reports | Admin can manage everything above |
+| M10 | **Billing** | Storage usage metering per school, the storage price, school balance + ledger, top-ups through Vkurse's own shop, charges for usage (balance-first), what happens at zero balance. No plans, no subscriptions | A school tops up in the test shop, and a storage charge is taken from its balance |
+| M11 | **Admin** | `/admin/**` for users, schools, storage prices, payments and balance adjustments; SQL-view reports | Admin can manage everything above |
 | M12 | **Monitoring** | Actuator, Micrometer, OpenTelemetry → Grafana LGTM, JSON logs, Telegram error appender, admin insights | Traces and metrics visible in Grafana |
 | M13 | **Tests & CI** | Testcontainers, WireMock, Modulith scenario tests, ArchUnit rules, GitHub Actions, image build | CI is green |
 | M14 | **Hardening & deploy** | Bucket4j rate limiting, caching, self-hosted Supabase + API on a RU cloud VM, TLS, backups | Production is live |
@@ -90,7 +91,8 @@ M1 to M5 are done and live in `services/platform` (M1's foundation is now `libs/
 - Money is `BigDecimal` (`NUMERIC(19,2)`), never floating point.
 - Roles come from the database, and there are no secrets in code.
 - Cross-module events go through the Modulith event publication registry (an outbox), so a crash can't lose them.
-- Subscriptions: autopay with a saved payment method, a 54-FZ receipt on every payment, and 3 failed renewals → expired.
+- A provider's notification is acted on once, and a payment's outcome also reaches us without one: a job asks the provider about every pending payment.
+- Vkurse's own charges (storage) carry a 54-FZ receipt; receipts for a school's sales are that school's, a setting of each merchant.
 
 ## Risks & prerequisites
 - Self-hosted Supabase means running upgrades and backups ourselves. The fallback is Yandex Managed PostgreSQL + Yandex Object Storage: auth is ours, so nothing else depends on Supabase.

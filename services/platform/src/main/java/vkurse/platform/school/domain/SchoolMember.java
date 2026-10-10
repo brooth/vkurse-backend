@@ -84,6 +84,14 @@ public class SchoolMember extends AggregateRoot {
         ensure(role.canDeleteCourses());
     }
 
+    public void ensureCanManagePayments() {
+        ensure(role.canManagePayments());
+    }
+
+    public void ensureCanSeePayments() {
+        ensure(role.canSeePayments());
+    }
+
     /** Checks that this member may invite someone to their school as {@code invited}. */
     public void ensureCanInvite(SchoolRole invited) {
         ensureAssignable(invited);

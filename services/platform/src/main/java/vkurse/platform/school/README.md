@@ -56,6 +56,8 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 | See courses and lessons | ✓ | ✓ | ✓ | ✓ |
 | Create, edit and publish courses | ✓ | ✓ | ✓ | |
 | Delete a course | ✓ | ✓ | | |
+| See merchants and payments | ✓ | ✓ | | |
+| Connect and change merchants, refund payments | ✓ | | | |
 | Delete the school, transfer it | ✓ | | | |
 
 - A school has exactly one owner (`school_members_owner_key`). The role is never invited or assigned: it moves only by a transfer, which makes the old owner an admin.

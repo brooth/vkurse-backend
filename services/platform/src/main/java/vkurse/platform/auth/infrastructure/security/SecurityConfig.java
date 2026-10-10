@@ -52,7 +52,13 @@ import vkurse.platform.auth.infrastructure.RsaJwtTokens;
 @EnableMethodSecurity
 class SecurityConfig {
     private static final String[] PUBLIC_PATHS = {
-        "/auth/**", JwtResourceServer.JWKS_PATH, "/schools/by-slug/*", "/catalog/**", "/actuator/health", "/error"
+        "/auth/**",
+        JwtResourceServer.JWKS_PATH,
+        "/schools/by-slug/*",
+        "/catalog/**",
+        "/payments/webhooks/**",
+        "/actuator/health",
+        "/error"
     };
 
     @Bean

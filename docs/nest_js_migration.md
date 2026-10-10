@@ -266,7 +266,8 @@ Events are records implementing `DomainEvent`, in the publishing module's `domai
 | A new env var | Map it in `application.yaml` with an explicit placeholder (`secret-key: ${YOOKASSA_SECRET_KEY}`) into a properties record. Relaxed binding won't map `VKURSE_NODE_ID` to `node-id` on its own |
 | `axios.create({ baseURL, auth })` | A port interface in `domain/`, implemented in `infrastructure/` with a `RestClient` bean or an `@HttpExchange` interface, with timeouts set |
 | axios error handling (`error.response.data`) | Catch `RestClientResponseException` and map it to a `ClientException` code |
-| `Idempotence-Key: randomUUID()` | A key derived from **our** record id (e.g. the payment id), so a retry is the same request |
+| `Idempotence-Key: randomUUID()` | A key derived from **our** record id (e.g. the payment id), so a retry is the same request. Save the record first, then call the provider |
+| Registering YooKassa webhooks with `POST /v3/webhooks` | Works only with an OAuth token of a partner application. A shop connected with its id and secret key sets the notification URL in its own YooKassa cabinet; never rely on it, and also ask the provider for the state yourself |
 | `nestjs-i18n` JSON (`t('a.b', lang, { args })`) | Spring `MessageSource`; nested keys → dotted keys. Russian goes in the base `messages.properties`, so `ru` is the fallback for every locale |
 | Handlebars templates (`{{name}}`) | Thymeleaf: `templates/notification/{name}.html` with `th:text="${name}"`, plus `{name}.txt` with `[(${name})]` for Telegram and the email's text part |
 | `{ type: 'html-template', template: 'x.hbs', title, params }` | `Content.template("x", locale, params)`; the title is `notification.x.subject` in `messages.properties` |
@@ -343,6 +344,10 @@ The source has `*.spec.ts` with hand-written Firestore mocks. Don't port them. T
 | The YooKassa `Idempotence-Key` was a new random UUID on every call | Derive the key from our payment id |
 | Client errors returned HTTP 200 | Real HTTP statuses |
 | Money as floating-point `number` | `Money` / `BigDecimal` |
+| A webhook that names a payment was recorded before the payment's state was checked, so a forged or early notification could mark the real one as "seen" | Record a notification in the inbox only in the transaction where it settles something; make the aggregate ignore an answer it already has |
+| One shop for the whole backend, its keys read from `process.env` when the service is built; without them the feature silently switched off | A `Merchant` row per school with its own credentials, passed to the gateway on each call. Nothing is switched off by a missing setting |
+| A merchant's secrets (terminal password, access token) were plain fields of the entity, hidden from responses only by serialization groups | Credentials are a sealed value encrypted in one column (`CredentialCipher`); no response record has a field for them |
+| Payment metadata (`userId`, `amountRub`) read back from the provider decided who was credited and how much | Our own `Payment` row says who paid, to whom and how much; the provider's answer is only compared with it |
 | A hard-coded admin API key in code | Roles come from the database; secrets come from config |
 | Updates and deletes weren't scoped to the owner | Every use case for a user takes `userId` and checks ownership (section 5.3) |
 | Events emitted after the write, fire-and-forget (lost on a crash) | Modulith events, stored in the same transaction |

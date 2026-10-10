@@ -1,6 +1,6 @@
 # `services/platform`
 
-> Users, authentication, schools, courses and file storage. The only service that issues tokens; every other service verifies them with the keys published at `/.well-known/jwks.json`.
+> Users, authentication, schools, courses, payments and file storage. The only service that issues tokens; every other service verifies them with the keys published at `/.well-known/jwks.json`.
 
 Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one module (a Spring Modulith application module), split into four layers.
 
@@ -10,6 +10,7 @@ Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one modu
 | [`auth/`](src/main/java/vkurse/platform/auth/README.md) | Sessions, our JWTs, email OTP, Google and Apple sign-in, the security filter chain |
 | [`school/`](src/main/java/vkurse/platform/school/README.md) | Schools, their staff with roles, invitations, students, the logo and the file library |
 | [`course/`](src/main/java/vkurse/platform/course/README.md) | Courses, sections and lessons with block content, publishing, the public catalog with search |
+| [`payment/`](src/main/java/vkurse/platform/payment/README.md) | A school's merchants (its accounts with payment providers), payments to them, refunds, provider notifications |
 | [`storage/`](src/main/java/vkurse/platform/storage/README.md) | Files in Supabase Storage: signed uploads and downloads, per-school paths |
 
 | Layer | Holds | May use |
@@ -38,6 +39,7 @@ Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{descript
 | `VKURSE_STORAGE_URL` | yes | Base URL of the Supabase Storage API as this service reaches it. Locally `http://127.0.0.1:54321`; behind the Supabase gateway it ends with `/storage/v1` |
 | `VKURSE_STORAGE_PUBLIC_URL` | yes | The same API as a browser reaches it: upload, download and public links start with it |
 | `VKURSE_STORAGE_SERVICE_KEY` | yes | Supabase service role key. `.env.example` has the published local demo key |
+| `VKURSE_PAYMENT_ENCRYPTION_KEY` | yes | Encrypts schools' payment credentials in the database: 32 random bytes in Base64 (`openssl rand -base64 32`). Losing or changing it loses every connected merchant |
 | `VKURSE_AUTH_PRIVATE_KEY` | yes | RSA key that signs our tokens: PKCS#8 PEM, 2048 bits or more, newlines as `\n` |
 | `VKURSE_AUTH_KEY_ID` | yes | `kid` of that key |
 | `VKURSE_AUTH_SECRET` | yes | HMAC key for OTP and exchange code hashes, at least 32 characters |

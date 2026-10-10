@@ -119,6 +119,11 @@ vkurse:
     public-bucket: vkurse-public
     private-bucket: vkurse-private
     video-bucket: vkurse-video
+  payment:
+    # Encrypts merchants' credentials in the database: 32 random bytes in Base64 (`openssl rand -base64 32`).
+    encryption-key: ${VKURSE_PAYMENT_ENCRYPTION_KEY}
+    yookassa:
+      url: https://api.yookassa.ru/v3
   notification:
     mail-from: ${VKURSE_MAIL_FROM}
     telegram:
