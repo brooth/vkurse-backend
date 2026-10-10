@@ -11,6 +11,7 @@ Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one modu
 | [`school/`](src/main/java/vkurse/platform/school/README.md) | Schools, their staff with roles, invitations, students, the logo and the file library |
 | [`course/`](src/main/java/vkurse/platform/course/README.md) | Courses, sections and lessons with block content, publishing, the public catalog with search |
 | [`commerce/`](src/main/java/vkurse/platform/commerce/README.md) | A course's offers, a school's promo codes, orders and checkout |
+| [`learning/`](src/main/java/vkurse/platform/learning/README.md) | Students taking courses: enrollments, which lessons are open, progress, homework and its review, quizzes |
 | [`payment/`](src/main/java/vkurse/platform/payment/README.md) | A school's merchants (its accounts with payment providers), payments to them, refunds, provider notifications |
 | [`storage/`](src/main/java/vkurse/platform/storage/README.md) | Files in Supabase Storage: signed uploads and downloads, per-school paths |
 
@@ -23,7 +24,7 @@ Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one modu
 
 Root classes: `PlatformApplication` (entry point), `PlatformProperties` (`vkurse.public-url`, `vkurse.web-url`).
 
-Notifications come from [`libs/core`](../../libs/core/README.md#notifications). This service adds the `notifications` table, the templates in `templates/notification/` (`otp-code`, `welcome`, `school-invitation`, `order-paid`) and their subjects in `messages.properties`.
+Notifications come from [`libs/core`](../../libs/core/README.md#notifications). This service adds the `notifications` table, the templates in `templates/notification/` (`otp-code`, `welcome`, `school-invitation`, `order-paid`, `course-granted`, `homework-accepted`, `homework-returned`) and their subjects in `messages.properties`.
 
 Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{description}.sql` (schema `platform`), `templates/notification/`, `messages.properties` (Russian, the base bundle).
 

@@ -37,6 +37,8 @@ void on(OrderRefunded event) {
 }
 ```
 
+The [learning module](../learning/README.md) listens for both: it gives the course and takes it away.
+
 ## Rules
 
 **Offers**
@@ -54,7 +56,7 @@ void on(OrderRefunded event) {
 **Orders**
 - A buyer must be signed in. Anyone may buy; buying makes them a student of the school.
 - **An order keeps what was bought as it was when ordered**: the offer's name, the course's title, the access length, the price, the discount and the total. Later changes of the offer or the code don't touch it.
-- **A buyer has a course once**: ordering a course they have paid for is 409 `commerce/already-bought` (also guarded by a unique index). Ordering a course again while an earlier order waits for payment cancels the earlier one.
+- **A buyer has a course once**: ordering a course they have by a paid order is 409 `commerce/already-bought`. A paid order whose access days have run out no longer counts, so the course can be bought again. Ordering a course again while an earlier order waits for payment cancels the earlier one.
 - An order with nothing to pay (a free offer, or a code that covers the price) is paid at once, with no payment.
 - An order waits for payment for 24 hours, then expires.
 
@@ -82,7 +84,7 @@ Authors and curators get 403. A school the caller doesn't work in, and another b
 | 409 `commerce/offer-unavailable` | The offer is not on sale, or its course is not published |
 | 400 `commerce/promo-code-invalid` | The code can't be used for this offer |
 | 409 `commerce/promo-code-taken` | The school has this code already |
-| 409 `commerce/already-bought` | The buyer has paid for this course |
+| 409 `commerce/already-bought` | The buyer has this course by a paid order whose access still lasts |
 | 409 `commerce/order-not-payable` | The order is not waiting for payment (paid, canceled, expired) |
 | 429 `commerce/too-many` | A 21st offer of a course, or a 201st promo code of a school |
 

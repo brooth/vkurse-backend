@@ -8,7 +8,9 @@ package vkurse.platform.course.domain;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.error.Errors.BadRequestException;
 
@@ -44,6 +46,19 @@ public record Drip(
                 }
                 yield new Drip(kind, null, at);
             }
+        };
+    }
+
+    /**
+     * When a lesson with this rule opens for a student.
+     *
+     * @param enrolledAt when the student got the course
+     */
+    public Instant opensAt(Instant enrolledAt) {
+        return switch (kind) {
+            case IMMEDIATELY -> enrolledAt;
+            case AFTER_DAYS -> enrolledAt.plus(Duration.ofDays(Objects.requireNonNull(days)));
+            case AT_TIME -> Objects.requireNonNull(at);
         };
     }
 

@@ -23,6 +23,8 @@ public enum FilePurpose {
     COURSE_COVER(true, Bucket.PUBLIC, "covers", FilePurpose.MAX_IMAGE_SIZE, Types.IMAGES),
     /** A file in a school's library: lesson materials. Read only with a signed link. */
     SCHOOL_FILE(true, Bucket.PRIVATE, "files", FilePurpose.MAX_LIBRARY_FILE_SIZE, Types.LIBRARY),
+    /** A file a student hands in with homework. It is kept for the school; read only with a signed link. */
+    HOMEWORK_FILE(true, Bucket.PRIVATE, "homework", FilePurpose.MAX_LIBRARY_FILE_SIZE, Types.LIBRARY),
     /** A video in a school's library. Read only with a signed link; too big for one request, so its upload resumes. */
     SCHOOL_VIDEO(true, Bucket.VIDEO, "videos", FilePurpose.MAX_VIDEO_SIZE, Types.VIDEOS);
 

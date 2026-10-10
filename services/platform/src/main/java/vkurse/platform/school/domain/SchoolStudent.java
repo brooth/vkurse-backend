@@ -41,6 +41,11 @@ public class SchoolStudent extends AggregateRoot {
         return new SchoolStudent(schoolId, userId, addedBy, now);
     }
 
+    /** The staff remove the student: call it before removing the row. */
+    public void leave() {
+        raise(new SchoolStudentRemoved(schoolId, userId));
+    }
+
     public boolean belongsTo(UUID schoolId) {
         return this.schoolId.equals(schoolId);
     }

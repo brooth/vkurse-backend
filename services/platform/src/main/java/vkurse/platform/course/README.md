@@ -19,6 +19,7 @@
 | | `CourseStructureService` | Sections, lessons and their order; `outline` |
 | | `LessonService` | `get`, `update`, `changeContent`, `publish`, `unpublish`, `links` |
 | | `CatalogService` | Public: `search`, `course`, `previewLesson`, `previewLinks` |
+| | `CourseReader` | Courses as their students get them, for the modules that show a course to someone who has it |
 | | `CourseAccess` | Who may reach a course: the staff of its school |
 | | `FileInUseListener` | Refuses the deletion of a stored file a lesson shows |
 | `infrastructure` | `Jpa*Repository` | The catalog search and "file in use" are native SQL |
@@ -50,17 +51,22 @@ It depends on [`school`](../school/README.md) (who is on the staff, with which r
 | `video` | `fileId`: a video of the school's library |
 | `image` | `fileId`: an image of the school's library |
 | `file` | `fileId`: any other file of the school's library, to download |
+| `homework` | `task`: Markdown, 1 to 50 000 characters. Students answer it and the staff review the answers |
+| `quiz` | `passPercent` (1 to 100) and `questions[ { text, kind, options[ { text, correct } ] } ]`. Students are graded at once |
 
 - Setting the content replaces all of it. Every block has an `id`: a block sent with its id keeps it, one sent without gets a new one.
+- A lesson has at most one homework and one quiz. A quiz has 1 to 50 questions, a question 2 to 10 options. A `SINGLE` question has exactly one right option, a `MULTIPLE` one at least one. Questions and options get ids and keep them, like blocks.
+- **Which options are right is shown only to the staff.** The public preview and a student's lesson leave `correct` out (`LessonContent.forStudents()`).
 - A block's file must be a confirmed file of the same school's library (else 404), and of the kind the block is for (else 400).
 - **A file a lesson shows can't be deleted from the library**: 409 `course/file-in-use`. Lessons of a deleted course don't count.
 - A lesson is published on its own, and needs content for it. Only published lessons appear outside the staff.
 - Blocks name files by id. The links are asked for separately (`…/links`), signed for a short time: a video for 6 hours, anything else for an hour. A video and an image are served to be shown, a file to be saved.
 
-**Who sees a lesson when** (stored now, enforced when students get courses, in M8)
+**Who sees a lesson when** (for students it is enforced by the [learning module](../learning/README.md#rules))
 - `preview`: a free preview. Anyone may read it once it and its course are published.
 - `drip`: when the lesson opens for a student: `IMMEDIATELY`, `AFTER_DAYS` (`days` after they got the course, 1 to 3650), or `AT_TIME` (`at`, for everyone).
-- `stop`: a stop lesson. The lessons after it stay closed until the student's work on it is accepted.
+- `stop`: a stop lesson. The lessons after it stay closed until the student completes it: its homework is accepted and its quiz passed, or, with neither, the student marks it. A course taken strictly in order has `stop` on every lesson.
+- With the defaults (`IMMEDIATELY`, no stop) every lesson is open at once.
 
 **Staff** (roles are in the [school module](../school/README.md#rules))
 
@@ -76,6 +82,7 @@ An author edits every course of the school. A course of a school the caller does
 - Public, no token. It shows published courses of live schools: a course of a deleted school is gone from it.
 - `$search` finds a course by the words of its title, summary and description in any grammatical form (Postgres full-text search, `russian`), or by a piece of its title as typed. The best match comes first; without `$search`, the latest published.
 - A course's public page shows its sections with the titles of their published lessons. Only free preview lessons can be read.
+- Unpublishing a course takes it out of the catalog. Students who have it keep it.
 
 ## Endpoints
 

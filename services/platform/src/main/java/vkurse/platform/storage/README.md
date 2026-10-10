@@ -57,6 +57,7 @@ A new kind of file is a new `FilePurpose` constant: whether it belongs to a scho
 | `SCHOOL_LOGO` | a school | anyone, by a lasting link | 5 MB | png, jpeg, webp |
 | `COURSE_COVER` | a school | anyone, by a lasting link | 5 MB | png, jpeg, webp |
 | `SCHOOL_FILE` | a school | a signed link | 50 MB | png, jpeg, webp, pdf, txt, zip, docx, xlsx, pptx, mp3 |
+| `HOMEWORK_FILE` | a school (uploaded by a student) | a signed link | 50 MB | as `SCHOOL_FILE` |
 | `SCHOOL_VIDEO` | a school | a signed link | 2 GB | mp4, webm, mov |
 
 There is no SVG or HTML: a browser would run the scripts in them.

@@ -10,10 +10,10 @@
 | `PromoCode`: percent or fixed amount, end time, number of uses, chosen offers | Done |
 | `Order`: place, pay through a merchant, cancel, expire; paid by the payment's success; refunded by a whole refund | Done |
 | Free orders (a free offer, or a code that covers the price) | Done |
-| `OrderPaid`, `OrderRefunded` | Done. Nothing listens until M8 |
+| `OrderPaid`, `OrderRefunded` | Done. The learning module listens since M8 |
 | The buyer becomes a student of the school, and gets an email | Done |
 | Public list of a course's offers on sale | Done |
-| Access to lessons, "my courses", taking access away after a refund | Not done: M8 |
+| Access to lessons, "my courses", taking access away after a refund | Done in M8 |
 | Bundles of courses, installments, gifts, invoices for companies, a crossed-out old price | Not done |
 | Sales reports | Not done: M11 |
 | Notifying the staff of a sale | Not done |
@@ -24,7 +24,7 @@
 - **A module of `services/platform`**, depending on `course`, `payment`, `school` and `user`. None of them depends on it.
 - **An offer sells one course**, and a course has several offers.
 - **An order freezes what was bought**, so a later change of a price or a code never changes what a buyer owes or paid.
-- **A buyer has a course once.** A new order for a course replaces the buyer's unpaid one.
+- **A buyer has a course once.** A new order for a course replaces the buyer's unpaid one. Since M8 a paid order whose access days ran out no longer counts, and the unique index that guarded this is gone.
 - **Only `PaymentSucceeded` makes an order paid.** It is handled after the payment's transaction is committed, through the event publication registry, so a crash between the two can't lose it. The order therefore turns `PAID` a moment after the payment.
 - **Paid money wins**: an expired or canceled order becomes paid when its payment succeeds. The expiry job doesn't ask whether a payment is still pending, because the outcome is right either way.
 - **While an order's payment is pending, paying again returns the same payment**; the provider is asked first, so a payment that was just paid isn't started again. Two `pay` requests at the very same moment can still start two payments.

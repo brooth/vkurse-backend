@@ -12,6 +12,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import org.jspecify.annotations.Nullable;
@@ -103,7 +104,7 @@ public class Order extends AggregateRoot {
      * Places an order for an offer that can be bought. An order with nothing to pay is paid at once.
      *
      * @param quote what the offer costs this buyer, with {@code promo} if one was used
-     * @param alreadyBought whether the buyer has a paid order for the same course
+     * @param paid the buyer's paid orders for the same course
      */
     public static Order place(
             UUID buyerId,
@@ -111,9 +112,9 @@ public class Order extends AggregateRoot {
             String courseTitle,
             Quote quote,
             @Nullable PromoCode promo,
-            boolean alreadyBought,
+            List<Order> paid,
             Instant now) {
-        if (alreadyBought) {
+        if (paid.stream().anyMatch(earlier -> earlier.givesCourse(now))) {
             throw new AlreadyBoughtException();
         }
         var order = new Order(buyerId, offer, courseTitle, quote, promo, now);
@@ -133,6 +134,23 @@ public class Order extends AggregateRoot {
 
     public boolean isPaid() {
         return status == Status.PAID;
+    }
+
+    /** Whether the buyer has the course by this order now: it is paid, and its access days, if any, haven't run out. */
+    public boolean givesCourse(Instant now) {
+        if (status != Status.PAID || paidAt == null) {
+            return false;
+        }
+        return accessDays == null || now.isBefore(paidAt.plus(Duration.ofDays(accessDays)));
+    }
+
+    /**
+     * Whether the buyer has the course already by another order, so that paying this one takes money for nothing.
+     *
+     * @param paid the buyer's paid orders for the same course
+     */
+    public boolean isCoveredBy(List<Order> paid, Instant now) {
+        return paid.stream().anyMatch(other -> !other.equals(this) && other.givesCourse(now));
     }
 
     /** Checks that a payment may be started for the order now. */

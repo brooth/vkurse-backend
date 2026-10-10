@@ -1,0 +1,10 @@
+<!--/*
+  Copyright (C) vkurse.space - All Rights Reserved
+  Unauthorized copying of this file, via any medium is strictly prohibited
+  Proprietary and confidential
+*/-->
+<!--/* Params: name (the student's name), lessonTitle, courseTitle, comment (what to change), link (the web app). */-->
+<p style="margin:0 0 12px;">Здравствуйте, <span th:text="${name}">Имя</span>!</p>
+<p style="margin:0 0 12px;">Ваше домашнее задание к уроку «<span th:text="${lessonTitle}">Урок</span>» курса «<span th:text="${courseTitle}">Курс</span>» вернули на доработку.</p>
+<p style="margin:0 0 12px;">Комментарий проверяющего: <span th:text="${comment}">комментарий</span></p>
+<p style="margin:0;"><a th:href="${link}" th:text="${link}">https://vkurse.ru</a></p>

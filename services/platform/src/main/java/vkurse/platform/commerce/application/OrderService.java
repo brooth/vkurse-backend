@@ -112,7 +112,7 @@ public class OrderService {
                     sold.course().course().getTitle(),
                     quote,
                     promo,
-                    orders.hasPaid(userId, offer.getCourseId()),
+                    orders.findPaid(userId, offer.getCourseId()),
                     now);
             if (promo != null) {
                 promo.use();

@@ -18,6 +18,6 @@ public record PreviewLessonResponse(UUID id, UUID courseId, String title, List<L
                 lesson.getId(),
                 lesson.getCourseId(),
                 lesson.getTitle(),
-                lesson.getContent().blocks());
+                lesson.getContent().forStudents().blocks());
     }
 }

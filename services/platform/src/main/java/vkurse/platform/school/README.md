@@ -8,7 +8,7 @@
 | | `Slug` | Value object: the school's public address |
 | | `SchoolMember`, `SchoolRole` | A user on the staff with a role; the role holds the permission matrix, the member enforces it (`ensureCan…`, `changeRole`, `handOverTo`) |
 | | `SchoolInvitation` | A pending invitation: `issue`, `verify`, `accept` (returns the new `SchoolMember`) |
-| | `SchoolStudent` | A user who studies in the school |
+| | `SchoolStudent`, `SchoolStudentRemoved` | A user who studies in the school; the event of the staff removing one |
 | | `Membership`, `MemberProfile`, `StudentProfile` | Read pairs: a school with the caller's member; a member or a student with their `User` |
 | | `InvitationTokens` | Port: makes a link token and its hash |
 | | `SchoolErrors` | The module's client errors |
@@ -57,6 +57,8 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 | Create, edit and publish courses | ✓ | ✓ | ✓ | |
 | Delete a course | ✓ | ✓ | | |
 | Manage offers and promo codes, see orders | ✓ | ✓ | | |
+| See a course's students and their progress; review homework | ✓ | ✓ | ✓ | ✓ |
+| Give a course to a student by hand, take it away | ✓ | ✓ | | |
 | See merchants and payments | ✓ | ✓ | | |
 | Connect and change merchants, refund payments | ✓ | | | |
 | Delete the school, transfer it | ✓ | | | |
@@ -76,6 +78,7 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 **Students**
 - A user is a student of a school at most once. Being on the staff is separate, and a user may be both.
 - Someone who pays for a course of the school becomes its student (the [commerce module](../commerce/README.md) calls `enroll`).
+- Removing a student raises `SchoolStudentRemoved`; the [learning module](../learning/README.md) then takes their courses of the school away.
 - The staff add a student by email; someone without an account gets one, as at a first sign-in (with the welcome email). Adding twice changes nothing.
 
 **Logo and file library** (the files are kept by the [storage module](../storage/README.md), which has the limits)

@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -38,7 +39,10 @@ public record LessonContent(List<LessonBlock> blocks) {
         }
         var ids = new HashSet<UUID>();
         var checked = new ArrayList<LessonBlock>();
-        for (var block : blocks) {
+        var homeworks = 0;
+        var quizzes = 0;
+        for (var sent : blocks) {
+            var block = sent;
             // A client's JSON can leave out what the types call non-null.
             switch (block) {
                 case null -> throw new BadRequestException("A block is missing");
@@ -48,6 +52,23 @@ public record LessonContent(List<LessonBlock> blocks) {
                             || text.text().length() > MAX_TEXT_LENGTH) {
                         throw new BadRequestException("A text block must have 1 to " + MAX_TEXT_LENGTH + " characters");
                     }
+                }
+                case LessonBlock.Homework homework -> {
+                    if (Objects.isNull(homework.task())
+                            || homework.task().isBlank()
+                            || homework.task().length() > MAX_TEXT_LENGTH) {
+                        throw new BadRequestException(
+                                "A homework task must have 1 to " + MAX_TEXT_LENGTH + " characters");
+                    }
+                    if (++homeworks > 1) {
+                        throw new BadRequestException("A lesson has at most one homework");
+                    }
+                }
+                case LessonBlock.Quiz quiz -> {
+                    if (++quizzes > 1) {
+                        throw new BadRequestException("A lesson has at most one quiz");
+                    }
+                    block = quiz.checked(newId);
                 }
                 default -> {
                     if (block.fileId() == null) {
@@ -69,6 +90,29 @@ public record LessonContent(List<LessonBlock> blocks) {
     @JsonIgnore
     public boolean isEmpty() {
         return blocks.isEmpty();
+    }
+
+    /** The lesson's homework, if it has one. */
+    public Optional<LessonBlock.Homework> homework() {
+        return blocks.stream()
+                .filter(LessonBlock.Homework.class::isInstance)
+                .map(LessonBlock.Homework.class::cast)
+                .findFirst();
+    }
+
+    /** The lesson's quiz, if it has one. */
+    public Optional<LessonBlock.Quiz> quiz() {
+        return blocks.stream()
+                .filter(LessonBlock.Quiz.class::isInstance)
+                .map(LessonBlock.Quiz.class::cast)
+                .findFirst();
+    }
+
+    /** The content as anyone outside the staff sees it: a quiz doesn't say which options are right. */
+    public LessonContent forStudents() {
+        return new LessonContent(blocks.stream()
+                .map(block -> block instanceof LessonBlock.Quiz quiz ? quiz.withoutAnswers() : block)
+                .toList());
     }
 
     /** The stored files the blocks show. */
@@ -118,6 +162,8 @@ public record LessonContent(List<LessonBlock> blocks) {
                     !isVideo && file.getContentType().startsWith("image/");
                 case LessonBlock.File other -> !isVideo;
                 case LessonBlock.Text text -> true;
+                case LessonBlock.Homework homework -> true;
+                case LessonBlock.Quiz quiz -> true;
             };
             if (!fits) {
                 throw new BadRequestException("The file \"" + file.getName() + "\" doesn't fit its block");

@@ -43,30 +43,14 @@ class JpaOrderRepository extends JpaAggregateRepository<Order> implements OrderR
     }
 
     @Override
-    public boolean hasPaid(UUID buyerId, UUID courseId, UUID exceptOrderId) {
-        return em.createQuery("""
-                        SELECT COUNT(o) FROM Order o
-                        WHERE o.buyerId = :buyerId AND o.courseId = :courseId AND o.status = :paid
-                          AND o.id <> :except
-                        """, Long.class)
-                        .setParameter("buyerId", buyerId)
-                        .setParameter("courseId", courseId)
-                        .setParameter("paid", Order.Status.PAID)
-                        .setParameter("except", exceptOrderId)
-                        .getSingleResult()
-                > 0;
-    }
-
-    @Override
-    public boolean hasPaid(UUID buyerId, UUID courseId) {
+    public List<Order> findPaid(UUID buyerId, UUID courseId) {
         return em.createQuery(
-                                "SELECT COUNT(o) FROM Order o WHERE o.buyerId = :buyerId AND o.courseId = :courseId AND o.status = :paid",
-                                Long.class)
-                        .setParameter("buyerId", buyerId)
-                        .setParameter("courseId", courseId)
-                        .setParameter("paid", Order.Status.PAID)
-                        .getSingleResult()
-                > 0;
+                        "SELECT o FROM Order o WHERE o.buyerId = :buyerId AND o.courseId = :courseId AND o.status = :paid",
+                        Order.class)
+                .setParameter("buyerId", buyerId)
+                .setParameter("courseId", courseId)
+                .setParameter("paid", Order.Status.PAID)
+                .getResultList();
     }
 
     @Override

@@ -44,7 +44,7 @@ class OrderPaymentListener {
             log.error("Payment {} succeeded for order {}, which doesn't exist", event.paymentId(), event.referenceId());
             return;
         }
-        if (orders.hasPaid(order.getBuyerId(), order.getCourseId(), order.getId())) {
+        if (order.isCoveredBy(orders.findPaid(order.getBuyerId(), order.getCourseId()), clock.instant())) {
             // The money was taken twice for one course. Nothing here can undo that: the staff must refund it.
             log.error(
                     "Payment {} succeeded for order {}, but buyer {} has course {} already: refund it",

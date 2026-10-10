@@ -1,0 +1,9 @@
+<!--/*
+  Copyright (C) vkurse.space - All Rights Reserved
+  Unauthorized copying of this file, via any medium is strictly prohibited
+  Proprietary and confidential
+*/-->
+<!--/* Params: name (the student's name), courseTitle, link (the web app). */-->
+<p style="margin:0 0 12px;">Здравствуйте, <span th:text="${name}">Имя</span>!</p>
+<p style="margin:0 0 12px;">Школа открыла вам курс «<span th:text="${courseTitle}">Курс</span>». Он уже в ваших курсах.</p>
+<p style="margin:0;"><a th:href="${link}" th:text="${link}">https://vkurse.ru</a></p>

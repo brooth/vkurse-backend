@@ -62,6 +62,7 @@ public class SchoolStudentService {
         var student = students.findById(studentId)
                 .filter(found -> found.belongsTo(schoolId))
                 .orElseThrow(() -> new NotFoundException("Student not found"));
+        student.leave();
         students.remove(student);
     }
 
