@@ -14,7 +14,6 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.error.Errors.BadRequestException;
@@ -22,7 +21,6 @@ import vkurse.core.error.Errors.BadRequestException;
 /** A person who signed in: a student, a school member or a platform admin. */
 @Entity
 @Table(name = "users")
-@Getter
 public class User extends AggregateRoot {
     public static final String DEFAULT_LOCALE = "ru";
     public static final String DEFAULT_TIMEZONE = "Europe/Moscow";
@@ -73,6 +71,38 @@ public class User extends AggregateRoot {
         var user = new User(email, displayName, picture, now);
         user.raise(new UserRegistered(user.getId()));
         return user;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Email getEmail() {
+        return email;
+    }
+
+    public @Nullable String getPicture() {
+        return picture;
+    }
+
+    public @Nullable UUID getPictureFileId() {
+        return pictureFileId;
+    }
+
+    public String getLocale() {
+        return locale;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public @Nullable Instant getDeletedAt() {
+        return deletedAt;
     }
 
     /** Changes what a user may change in their own profile. A {@code null} argument leaves that field as it is. */

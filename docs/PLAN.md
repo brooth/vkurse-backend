@@ -30,7 +30,7 @@ This is the **main plan**. Every milestone below gets its own detailed plan in `
 ```
 
 ## Stack
-Java 25 (records, sealed interfaces, pattern-matching `switch`, virtual threads) · Spring Boot 4.1 (Web MVC, Validation, Security + OAuth2 Resource Server + OAuth2 Client, JPA/Hibernate 7, Actuator, Mail) · PostgreSQL via Supabase · Flyway · Spring Modulith (module declarations + reliable event publication, used as an outbox) · ShedLock (cluster-safe `@Scheduled`) · Lombok (entities only) · Jackson `@JsonView` · `RestClient`/`@HttpExchange` + Spring 7 `@Retryable` · Spotless · later: Micrometer/OpenTelemetry/Grafana (M12), Testcontainers/WireMock/ArchUnit (M13).
+Java 25 (records, sealed interfaces, pattern-matching `switch`, virtual threads) · Spring Boot 4.1 (Web MVC, Validation, Security + OAuth2 Resource Server + OAuth2 Client, JPA/Hibernate 7, Actuator, Mail) · PostgreSQL via Supabase · Flyway · Spring Modulith (module declarations + reliable event publication, used as an outbox) · ShedLock (cluster-safe `@Scheduled`) · Jackson `@JsonView` · `RestClient`/`@HttpExchange` + Spring 7 `@Retryable` · Spotless · later: Micrometer/OpenTelemetry/Grafana (M12), Testcontainers/WireMock/ArchUnit (M13).
 
 ## Codebase shape
 

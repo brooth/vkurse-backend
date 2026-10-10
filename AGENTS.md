@@ -134,7 +134,7 @@ Move the code into `domain` when you see any of these in a service or a controll
 
 ### Aggregates
 - An aggregate extends `AggregateRoot` and is a JPA `@Entity` with a plural table name: `@Table(name = "courses")`. Class names have **no** `Entity` suffix: `Course`, `User`, `Session`.
-- **No setters.** Lombok `@Getter` only (Lombok is for aggregates only). State changes through methods named for what happens: `course.publish(now)`, `session.revoke(now)`, `user.changeProfile(…)`.
+- **No setters, no Lombok.** Getters are written by hand, after the constructors and factories. State changes through methods named for what happens: `course.publish(now)`, `session.revoke(now)`, `user.changeProfile(…)`.
 - **Created by a static factory** named for the event (`User.register(…)`, `Session.start(…)`), which calls a private constructor that calls `super(now)`. Add a `protected` no-arg constructor for Hibernate.
 - **Rules live in the aggregate**, not in a service: expiry, attempt limits, state transitions, what may change (see [Where a rule goes](#where-a-rule-goes)).
 - **Time is a parameter** (`Instant now`): an aggregate never calls a clock. The application service passes `clock.instant()`.
@@ -146,7 +146,6 @@ Move the code into `domain` when you see any of these in a service or a controll
 ```java
 @Entity
 @Table(name = "courses")
-@Getter
 public class Course extends AggregateRoot {
     private String title;
 
@@ -164,6 +163,18 @@ public class Course extends AggregateRoot {
 
     public static Course draft(String title, Instant now) {
         return new Course(title, now);
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public @Nullable Instant getPublishedAt() {
+        return publishedAt;
     }
 
     public void publish(Instant now) {

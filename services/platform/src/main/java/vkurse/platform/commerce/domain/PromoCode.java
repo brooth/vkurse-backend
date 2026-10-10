@@ -11,7 +11,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.jspecify.annotations.Nullable;
@@ -27,7 +26,6 @@ import vkurse.platform.commerce.domain.CommerceErrors.TooManyException;
  */
 @Entity
 @Table(name = "promo_codes")
-@Getter
 public class PromoCode extends AggregateRoot {
     /** How many promo codes a school may have. */
     public static final int MAX_PER_SCHOOL = 200;
@@ -95,6 +93,42 @@ public class PromoCode extends AggregateRoot {
             throw new TooManyException("The school has too many promo codes");
         }
         return new PromoCode(schoolId, code, discount, validUntil, checkedMaxUses(maxUses), checkedScope(scope), now);
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public PromoCodeText getCode() {
+        return code;
+    }
+
+    public Discount getDiscount() {
+        return discount;
+    }
+
+    public @Nullable Instant getValidUntil() {
+        return validUntil;
+    }
+
+    public @Nullable Integer getMaxUses() {
+        return maxUses;
+    }
+
+    public int getUsedCount() {
+        return usedCount;
+    }
+
+    public OfferScope getScope() {
+        return scope;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public @Nullable Instant getArchivedAt() {
+        return archivedAt;
     }
 
     public boolean belongsTo(UUID schoolId) {

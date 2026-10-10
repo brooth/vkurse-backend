@@ -11,7 +11,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.error.Errors.BadRequestException;
 import vkurse.core.error.Errors.ForbiddenException;
@@ -24,7 +23,6 @@ import vkurse.platform.school.domain.SchoolErrors.OwnerCannotLeaveException;
  */
 @Entity
 @Table(name = "school_members")
-@Getter
 public class SchoolMember extends AggregateRoot {
     private UUID schoolId;
 
@@ -50,6 +48,18 @@ public class SchoolMember extends AggregateRoot {
     /** A member who accepted an invitation; see {@link SchoolInvitation#accept}. */
     static SchoolMember join(UUID schoolId, UUID userId, SchoolRole role, Instant now) {
         return new SchoolMember(schoolId, userId, role, now);
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public SchoolRole getRole() {
+        return role;
     }
 
     public boolean belongsTo(UUID schoolId) {

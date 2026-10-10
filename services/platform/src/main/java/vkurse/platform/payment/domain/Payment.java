@@ -15,7 +15,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.error.Errors.BadRequestException;
@@ -29,7 +28,6 @@ import vkurse.platform.payment.domain.PaymentErrors.NotRefundableException;
  */
 @Entity
 @Table(name = "payments")
-@Getter
 public class Payment extends AggregateRoot {
     public static final int MAX_DESCRIPTION_LENGTH = 128;
     public static final int MAX_PURPOSE_LENGTH = 32;
@@ -189,6 +187,70 @@ public class Payment extends AggregateRoot {
             throw new BadRequestException("A test payment is at most " + MAX_TEST_AMOUNT.value() + " RUB");
         }
         return start(merchant, payerId, amount, description, TEST_PURPOSE, merchant.getId(), returnUrl, now);
+    }
+
+    public UUID getMerchantId() {
+        return merchantId;
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public UUID getPayerId() {
+        return payerId;
+    }
+
+    public Money getAmount() {
+        return amount;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getPurpose() {
+        return purpose;
+    }
+
+    public UUID getReferenceId() {
+        return referenceId;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public @Nullable String getProviderPaymentId() {
+        return providerPaymentId;
+    }
+
+    public @Nullable String getConfirmationUrl() {
+        return confirmationUrl;
+    }
+
+    public String getReturnUrl() {
+        return returnUrl;
+    }
+
+    public @Nullable Instant getPaidAt() {
+        return paidAt;
+    }
+
+    public @Nullable Instant getCanceledAt() {
+        return canceledAt;
+    }
+
+    public @Nullable String getCancellationReason() {
+        return cancellationReason;
+    }
+
+    public Money getRefundedAmount() {
+        return refundedAmount;
+    }
+
+    public @Nullable Instant getNextCheckAt() {
+        return nextCheckAt;
     }
 
     public boolean isPaidBy(UUID userId) {

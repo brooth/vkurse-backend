@@ -12,7 +12,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.money.Money;
 
@@ -23,7 +22,6 @@ import vkurse.core.money.Money;
  */
 @Entity
 @Table(name = "billing_ledger")
-@Getter
 public class LedgerEntry extends AggregateRoot {
     private UUID accountId;
 
@@ -53,6 +51,30 @@ public class LedgerEntry extends AggregateRoot {
         this.amount = amount;
         this.balanceAfterAmount = account.getBalanceAmount();
         this.referenceId = referenceId;
+    }
+
+    public UUID getAccountId() {
+        return accountId;
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public Kind getKind() {
+        return kind;
+    }
+
+    public Money getAmount() {
+        return amount;
+    }
+
+    public Money getBalanceAfterAmount() {
+        return balanceAfterAmount;
+    }
+
+    public UUID getReferenceId() {
+        return referenceId;
     }
 
     public enum Kind {

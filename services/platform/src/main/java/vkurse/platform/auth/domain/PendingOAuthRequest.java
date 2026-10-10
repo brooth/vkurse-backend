@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import vkurse.core.domain.AggregateRoot;
@@ -25,7 +24,6 @@ import vkurse.core.domain.AggregateRoot;
  */
 @Entity
 @Table(name = "auth_oauth_requests")
-@Getter
 public class PendingOAuthRequest extends AggregateRoot {
     public static final Duration TTL = Duration.ofMinutes(10);
 
@@ -54,6 +52,22 @@ public class PendingOAuthRequest extends AggregateRoot {
     public static PendingOAuthRequest start(
             String state, AuthorizationRequest request, CallbackUrl callback, Instant now) {
         return new PendingOAuthRequest(state, request, callback, now);
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public AuthorizationRequest getRequest() {
+        return request;
+    }
+
+    public CallbackUrl getCallback() {
+        return callback;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
     }
 
     public boolean isLive(Instant now) {

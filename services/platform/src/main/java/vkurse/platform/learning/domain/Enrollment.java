@@ -13,7 +13,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 
@@ -23,7 +22,6 @@ import vkurse.core.domain.AggregateRoot;
  */
 @Entity
 @Table(name = "enrollments")
-@Getter
 public class Enrollment extends AggregateRoot {
     private UUID schoolId;
 
@@ -65,6 +63,42 @@ public class Enrollment extends AggregateRoot {
         var enrollment = new Enrollment(schoolId, courseId, studentId, now);
         enrollment.apply(grant, now);
         return enrollment;
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public UUID getCourseId() {
+        return courseId;
+    }
+
+    public UUID getStudentId() {
+        return studentId;
+    }
+
+    public Source getSource() {
+        return source;
+    }
+
+    public @Nullable UUID getOrderId() {
+        return orderId;
+    }
+
+    public @Nullable UUID getGrantedBy() {
+        return grantedBy;
+    }
+
+    public Instant getStartedAt() {
+        return startedAt;
+    }
+
+    public @Nullable Instant getExpiresAt() {
+        return expiresAt;
+    }
+
+    public @Nullable Instant getRevokedAt() {
+        return revokedAt;
     }
 
     /**

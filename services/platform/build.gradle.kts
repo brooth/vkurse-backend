@@ -23,7 +23,5 @@ dependencies {
 
     runtimeOnly(libs.postgresql)
 
-    compileOnly(libs.lombok)
-    annotationProcessor(libs.lombok)
     annotationProcessor(libs.spring.boot.configuration.processor)
 }

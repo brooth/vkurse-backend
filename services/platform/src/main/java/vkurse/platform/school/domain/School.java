@@ -10,7 +10,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.error.Errors.BadRequestException;
@@ -21,7 +20,6 @@ import vkurse.core.error.Errors.BadRequestException;
  */
 @Entity
 @Table(name = "schools")
-@Getter
 public class School extends AggregateRoot {
     public static final int MAX_NAME_LENGTH = 100;
     public static final int MAX_DESCRIPTION_LENGTH = 2000;
@@ -55,6 +53,30 @@ public class School extends AggregateRoot {
     /** Opens a school. Its owner is added next to it, with {@link SchoolMember#owner}. */
     public static School open(String name, Slug slug, @Nullable String description, Instant now) {
         return new School(checkedName(name), slug, checkedDescription(description), now);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Slug getSlug() {
+        return slug;
+    }
+
+    public @Nullable String getDescription() {
+        return description;
+    }
+
+    public @Nullable String getLogo() {
+        return logo;
+    }
+
+    public @Nullable UUID getLogoFileId() {
+        return logoFileId;
+    }
+
+    public @Nullable Instant getDeletedAt() {
+        return deletedAt;
     }
 
     /** Changes what the staff may change. A {@code null} argument leaves that field as it is; a blank description removes it. */

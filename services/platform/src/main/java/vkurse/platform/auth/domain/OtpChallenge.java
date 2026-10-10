@@ -12,7 +12,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
-import lombok.Getter;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.platform.auth.domain.AuthErrors.OtpAttemptsExceededException;
 import vkurse.platform.auth.domain.AuthErrors.OtpExpiredException;
@@ -27,7 +26,6 @@ import vkurse.platform.user.domain.Email;
  */
 @Entity
 @Table(name = "auth_otp_codes")
-@Getter
 public class OtpChallenge extends AggregateRoot {
     public static final Duration TTL = Duration.ofMinutes(7);
     public static final Duration RESEND_AFTER = Duration.ofSeconds(30);
@@ -56,6 +54,22 @@ public class OtpChallenge extends AggregateRoot {
     /** Issues a challenge for {@code code}, which the caller emails. Only the code's hash is kept. */
     public static OtpChallenge issue(Email email, String code, SecretHasher hasher, Instant now) {
         return new OtpChallenge(email, hash(email, code, hasher), now);
+    }
+
+    public Email getEmail() {
+        return email;
+    }
+
+    public String getCodeHash() {
+        return codeHash;
+    }
+
+    public int getAttemptsLeft() {
+        return attemptsLeft;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
     }
 
     /**

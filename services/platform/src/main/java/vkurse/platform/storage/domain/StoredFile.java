@@ -14,7 +14,6 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.error.Errors.BadRequestException;
@@ -30,7 +29,6 @@ import vkurse.platform.storage.domain.StorageErrors.UploadExpiredException;
  */
 @Entity
 @Table(name = "stored_files")
-@Getter
 public class StoredFile extends AggregateRoot {
     /**
      * How long a client has to upload and confirm. The upload link itself is signed by the storage server, which must
@@ -122,6 +120,46 @@ public class StoredFile extends AggregateRoot {
             throw new TooManyUploadsException();
         }
         return new StoredFile(purpose, schoolId, uploadedBy, checkedName(name), plainType, size, now);
+    }
+
+    public FilePurpose getPurpose() {
+        return purpose;
+    }
+
+    public @Nullable UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public UUID getUploadedBy() {
+        return uploadedBy;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public Instant getUploadExpiresAt() {
+        return uploadExpiresAt;
+    }
+
+    public @Nullable Instant getDeletedAt() {
+        return deletedAt;
     }
 
     /**

@@ -9,13 +9,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import vkurse.core.domain.AggregateRoot;
 
 /** A student completed a lesson of a course they have. Once per enrollment and lesson, and never undone. */
 @Entity
 @Table(name = "lesson_completions")
-@Getter
 public class LessonCompletion extends AggregateRoot {
     private UUID enrollmentId;
 
@@ -39,5 +37,21 @@ public class LessonCompletion extends AggregateRoot {
         var completion = new LessonCompletion(enrollment, lessonId, now);
         completion.raise(new LessonCompleted(enrollment.getId(), lessonId, enrollment.getStudentId()));
         return completion;
+    }
+
+    public UUID getEnrollmentId() {
+        return enrollmentId;
+    }
+
+    public UUID getCourseId() {
+        return courseId;
+    }
+
+    public UUID getLessonId() {
+        return lessonId;
+    }
+
+    public UUID getStudentId() {
+        return studentId;
     }
 }

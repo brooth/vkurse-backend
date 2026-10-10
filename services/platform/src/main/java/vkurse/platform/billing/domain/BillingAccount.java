@@ -13,7 +13,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.money.Money;
@@ -29,7 +28,6 @@ import vkurse.platform.billing.domain.BillingErrors.SuspendedException;
  */
 @Entity
 @Table(name = "billing_accounts")
-@Getter
 public class BillingAccount extends AggregateRoot {
     /** How long a school may owe before its files stop opening. */
     public static final Duration GRACE = Duration.ofDays(14);
@@ -64,6 +62,30 @@ public class BillingAccount extends AggregateRoot {
     /** Opens a school's account, with nothing on it. */
     public static BillingAccount open(UUID schoolId, Instant now) {
         return new BillingAccount(schoolId, now);
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public Money getBalanceAmount() {
+        return balanceAmount;
+    }
+
+    public @Nullable Instant getDebtSince() {
+        return debtSince;
+    }
+
+    public @Nullable Instant getLowBalanceNotifiedAt() {
+        return lowBalanceNotifiedAt;
+    }
+
+    public @Nullable Instant getDebtNotifiedAt() {
+        return debtNotifiedAt;
+    }
+
+    public @Nullable Instant getSuspensionNotifiedAt() {
+        return suspensionNotifiedAt;
     }
 
     /** Adds a paid top-up to the balance. */

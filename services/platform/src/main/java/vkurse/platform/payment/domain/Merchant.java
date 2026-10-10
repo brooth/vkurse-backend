@@ -12,8 +12,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.AccessLevel;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.error.Errors.BadRequestException;
@@ -26,7 +24,6 @@ import vkurse.platform.payment.domain.PaymentErrors.TooManyMerchantsException;
  */
 @Entity
 @Table(name = "payment_merchants")
-@Getter
 public class Merchant extends AggregateRoot {
     public static final int MAX_NAME_LENGTH = 60;
 
@@ -49,7 +46,6 @@ public class Merchant extends AggregateRoot {
     private boolean testMode;
 
     /** The credentials, encrypted; {@code null} once the merchant is disconnected. */
-    @Getter(AccessLevel.NONE)
     private @Nullable String credentials;
 
     @Embedded
@@ -113,6 +109,34 @@ public class Merchant extends AggregateRoot {
             Instant now) {
         return new Merchant(
                 null, credentials.provider(), checkedName(name), account, cipher.seal(credentials), receipts, now);
+    }
+
+    public @Nullable UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public PaymentProvider getProvider() {
+        return provider;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getAccountId() {
+        return accountId;
+    }
+
+    public boolean isTestMode() {
+        return testMode;
+    }
+
+    public ReceiptSettings getReceipts() {
+        return receipts;
+    }
+
+    public Status getStatus() {
+        return status;
     }
 
     /** Brings Vkurse's own shop in line with the service's settings. */

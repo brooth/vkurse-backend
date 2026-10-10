@@ -14,7 +14,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.money.Money;
@@ -28,7 +27,6 @@ import vkurse.platform.commerce.domain.CommerceErrors.OrderNotPayableException;
  */
 @Entity
 @Table(name = "orders")
-@Getter
 public class Order extends AggregateRoot {
     /** What a payment for an order names as its purpose. */
     public static final String PAYMENT_PURPOSE = "order";
@@ -122,6 +120,70 @@ public class Order extends AggregateRoot {
             order.markPaid(now);
         }
         return order;
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public UUID getBuyerId() {
+        return buyerId;
+    }
+
+    public UUID getOfferId() {
+        return offerId;
+    }
+
+    public UUID getCourseId() {
+        return courseId;
+    }
+
+    public String getOfferName() {
+        return offerName;
+    }
+
+    public String getCourseTitle() {
+        return courseTitle;
+    }
+
+    public @Nullable Integer getAccessDays() {
+        return accessDays;
+    }
+
+    public Money getPriceAmount() {
+        return priceAmount;
+    }
+
+    public Money getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public Money getTotalAmount() {
+        return totalAmount;
+    }
+
+    public @Nullable UUID getPromoCodeId() {
+        return promoCodeId;
+    }
+
+    public @Nullable String getPromoCode() {
+        return promoCode;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public @Nullable UUID getPaymentId() {
+        return paymentId;
+    }
+
+    public @Nullable Instant getPaidAt() {
+        return paidAt;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
     }
 
     public boolean isOf(UUID buyerId) {

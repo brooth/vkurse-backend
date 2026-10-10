@@ -15,7 +15,6 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.error.Errors.NotFoundException;
 import vkurse.platform.school.domain.SchoolErrors.AlreadyMemberException;
@@ -31,7 +30,6 @@ import vkurse.platform.user.domain.Email;
  */
 @Entity
 @Table(name = "school_invitations")
-@Getter
 public class SchoolInvitation extends AggregateRoot {
     public static final Duration TTL = Duration.ofDays(7);
     public static final int MAX_PENDING = 50;
@@ -89,6 +87,30 @@ public class SchoolInvitation extends AggregateRoot {
             throw new TooManyInvitationsException();
         }
         return new SchoolInvitation(inviter, email, role, tokens.hash(token), now);
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public Email getEmail() {
+        return email;
+    }
+
+    public SchoolRole getRole() {
+        return role;
+    }
+
+    public UUID getInvitedBy() {
+        return invitedBy;
+    }
+
+    public String getTokenHash() {
+        return tokenHash;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
     }
 
     public boolean belongsTo(UUID schoolId) {

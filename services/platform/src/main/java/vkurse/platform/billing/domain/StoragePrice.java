@@ -11,7 +11,6 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
-import lombok.Getter;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.money.Money;
 
@@ -21,7 +20,6 @@ import vkurse.core.money.Money;
  */
 @Entity
 @Table(name = "billing_storage_prices")
-@Getter
 public class StoragePrice extends AggregateRoot {
     /** One GB, in bytes. */
     public static final long GB = 1024L * 1024 * 1024;
@@ -33,6 +31,14 @@ public class StoragePrice extends AggregateRoot {
     private LocalDate effectiveFrom;
 
     protected StoragePrice() {}
+
+    public Money getAmount() {
+        return amount;
+    }
+
+    public LocalDate getEffectiveFrom() {
+        return effectiveFrom;
+    }
 
     /**
      * What keeping that many bytes costs for one day: the month's price for them, divided by the days of that month

@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import vkurse.core.domain.AggregateRoot;
@@ -24,7 +23,6 @@ import vkurse.platform.course.domain.LessonBlock;
 /** One try of a student at a lesson's quiz, graded when it was made. It never changes. */
 @Entity
 @Table(name = "quiz_attempts")
-@Getter
 public class QuizAttempt extends AggregateRoot {
     private UUID enrollmentId;
 
@@ -84,5 +82,37 @@ public class QuizAttempt extends AggregateRoot {
         var grade = quiz.grade(sets);
         return new QuizAttempt(
                 enrollment, lessonId, new AnswerSheet(Map.copyOf(kept), grade.wrongQuestionIds()), grade, now);
+    }
+
+    public UUID getEnrollmentId() {
+        return enrollmentId;
+    }
+
+    public UUID getCourseId() {
+        return courseId;
+    }
+
+    public UUID getLessonId() {
+        return lessonId;
+    }
+
+    public UUID getStudentId() {
+        return studentId;
+    }
+
+    public AnswerSheet getAnswers() {
+        return answers;
+    }
+
+    public int getRightCount() {
+        return rightCount;
+    }
+
+    public int getQuestionCount() {
+        return questionCount;
+    }
+
+    public boolean isPassed() {
+        return passed;
     }
 }

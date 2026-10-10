@@ -15,7 +15,6 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 
@@ -25,7 +24,6 @@ import vkurse.core.domain.AggregateRoot;
  */
 @Entity
 @Table(name = "auth_sessions")
-@Getter
 public class Session extends AggregateRoot {
     /** How long the one-time code of an OAuth sign-in can be traded for tokens. */
     public static final Duration EXCHANGE_CODE_TTL = Duration.ofSeconds(60);
@@ -75,6 +73,42 @@ public class Session extends AggregateRoot {
     public static Session start(
             UUID userId, SignInProvider provider, @Nullable String userAgent, Instant now, Duration ttl) {
         return new Session(userId, provider, userAgent, now, ttl);
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public SignInProvider getProvider() {
+        return provider;
+    }
+
+    public @Nullable String getUserAgent() {
+        return userAgent;
+    }
+
+    public Instant getLastActivityAt() {
+        return lastActivityAt;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
+    }
+
+    public int getRefreshGeneration() {
+        return refreshGeneration;
+    }
+
+    public @Nullable String getExchangeCodeHash() {
+        return exchangeCodeHash;
+    }
+
+    public @Nullable Instant getExchangeExpiresAt() {
+        return exchangeExpiresAt;
+    }
+
+    public @Nullable Instant getRevokedAt() {
+        return revokedAt;
     }
 
     public boolean isLive(Instant now) {

@@ -10,7 +10,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.error.Errors.BadRequestException;
@@ -25,7 +24,6 @@ import vkurse.platform.course.domain.Course;
  */
 @Entity
 @Table(name = "offers")
-@Getter
 public class Offer extends AggregateRoot {
     public static final int MAX_NAME_LENGTH = 100;
     public static final int MAX_DESCRIPTION_LENGTH = 1000;
@@ -107,6 +105,42 @@ public class Offer extends AggregateRoot {
                 checkedAccess(accessDays),
                 position,
                 now);
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public UUID getCourseId() {
+        return courseId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public @Nullable String getDescription() {
+        return description;
+    }
+
+    public Money getPriceAmount() {
+        return priceAmount;
+    }
+
+    public @Nullable Integer getAccessDays() {
+        return accessDays;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public @Nullable Instant getArchivedAt() {
+        return archivedAt;
     }
 
     /**

@@ -9,7 +9,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 
@@ -19,7 +18,6 @@ import vkurse.core.domain.AggregateRoot;
  */
 @Entity
 @Table(name = "school_students")
-@Getter
 public class SchoolStudent extends AggregateRoot {
     private UUID schoolId;
 
@@ -39,6 +37,18 @@ public class SchoolStudent extends AggregateRoot {
 
     public static SchoolStudent enroll(UUID schoolId, UUID userId, @Nullable UUID addedBy, Instant now) {
         return new SchoolStudent(schoolId, userId, addedBy, now);
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public @Nullable UUID getAddedBy() {
+        return addedBy;
     }
 
     /** The staff remove the student: call it before removing the row. */

@@ -12,14 +12,12 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 
 /** A Google or Apple account a user signs in with, identified by the provider's stable {@code sub}. */
 @Entity
 @Table(name = "auth_linked_accounts")
-@Getter
 public class LinkedAccount extends AggregateRoot {
 
     @Column(nullable = false, updatable = false)
@@ -47,5 +45,21 @@ public class LinkedAccount extends AggregateRoot {
     /** Links a provider account to the user it belongs to, so the next sign-in with it finds that user. */
     public static LinkedAccount link(UUID userId, ProviderAccount account, Instant now) {
         return new LinkedAccount(userId, account.provider(), account.subject(), account.email(), now);
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public SignInProvider getProvider() {
+        return provider;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public @Nullable String getEmail() {
+        return email;
     }
 }

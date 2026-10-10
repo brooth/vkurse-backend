@@ -12,7 +12,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.jspecify.annotations.Nullable;
@@ -26,7 +25,6 @@ import vkurse.platform.course.domain.CourseErrors.TooManyLessonsException;
  */
 @Entity
 @Table(name = "course_lessons")
-@Getter
 public class Lesson extends AggregateRoot {
     private UUID courseId;
 
@@ -74,6 +72,42 @@ public class Lesson extends AggregateRoot {
             throw new TooManyLessonsException();
         }
         return new Lesson(section.getCourseId(), section.getId(), Course.checkedTitle(title), position, now);
+    }
+
+    public UUID getCourseId() {
+        return courseId;
+    }
+
+    public UUID getSectionId() {
+        return sectionId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public int getPosition() {
+        return position;
+    }
+
+    public LessonContent getContent() {
+        return content;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public boolean isPreview() {
+        return preview;
+    }
+
+    public Drip getDrip() {
+        return drip;
+    }
+
+    public boolean isStop() {
+        return stop;
     }
 
     public boolean belongsTo(UUID courseId) {

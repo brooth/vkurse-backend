@@ -12,7 +12,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.money.Money;
@@ -23,7 +22,6 @@ import vkurse.core.money.Money;
  */
 @Entity
 @Table(name = "payment_refunds")
-@Getter
 public class Refund extends AggregateRoot {
     private UUID paymentId;
 
@@ -56,6 +54,34 @@ public class Refund extends AggregateRoot {
 
     static Refund request(Payment payment, Money amount, @Nullable String reason, UUID requestedBy, Instant now) {
         return new Refund(payment, amount, reason, requestedBy, now);
+    }
+
+    public UUID getPaymentId() {
+        return paymentId;
+    }
+
+    public UUID getMerchantId() {
+        return merchantId;
+    }
+
+    public Money getAmount() {
+        return amount;
+    }
+
+    public @Nullable String getReason() {
+        return reason;
+    }
+
+    public UUID getRequestedBy() {
+        return requestedBy;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public @Nullable String getProviderRefundId() {
+        return providerRefundId;
     }
 
     public boolean belongsTo(UUID paymentId) {

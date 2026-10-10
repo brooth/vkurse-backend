@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
-import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import org.jspecify.annotations.Nullable;
@@ -30,7 +29,6 @@ import vkurse.platform.storage.domain.StoredFile;
  */
 @Entity
 @Table(name = "homework_submissions")
-@Getter
 public class Submission extends AggregateRoot {
     public static final int MAX_TEXT_LENGTH = 20_000;
     public static final int MAX_FILES = 10;
@@ -112,6 +110,50 @@ public class Submission extends AggregateRoot {
         }
         var fileIds = files.stream().map(StoredFile::getId).distinct().toList();
         return new Submission(enrollment, lessonId, answer, new SubmissionFiles(fileIds), now);
+    }
+
+    public UUID getEnrollmentId() {
+        return enrollmentId;
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public UUID getCourseId() {
+        return courseId;
+    }
+
+    public UUID getLessonId() {
+        return lessonId;
+    }
+
+    public UUID getStudentId() {
+        return studentId;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public SubmissionFiles getFiles() {
+        return files;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public @Nullable UUID getReviewerId() {
+        return reviewerId;
+    }
+
+    public @Nullable String getComment() {
+        return comment;
+    }
+
+    public @Nullable Instant getReviewedAt() {
+        return reviewedAt;
     }
 
     public boolean isOf(UUID studentId) {

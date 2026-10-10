@@ -11,7 +11,6 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
-import lombok.Getter;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.money.Money;
 
@@ -21,7 +20,6 @@ import vkurse.core.money.Money;
  */
 @Entity
 @Table(name = "billing_storage_usage")
-@Getter
 public class StorageUsage extends AggregateRoot {
     private UUID schoolId;
 
@@ -56,6 +54,26 @@ public class StorageUsage extends AggregateRoot {
             throw new IllegalArgumentException("Bytes can't be negative");
         }
         return new StorageUsage(schoolId, day, bytes, price, now);
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public LocalDate getDay() {
+        return day;
+    }
+
+    public long getBytes() {
+        return bytes;
+    }
+
+    public Money getPriceAmount() {
+        return priceAmount;
+    }
+
+    public Money getChargeAmount() {
+        return chargeAmount;
     }
 
     public boolean isCharged() {

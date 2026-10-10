@@ -11,7 +11,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import vkurse.core.domain.AggregateRoot;
 
 /**
@@ -21,7 +20,6 @@ import vkurse.core.domain.AggregateRoot;
  */
 @Entity
 @Table(name = "payment_webhook_events")
-@Getter
 public class WebhookEvent extends AggregateRoot {
     @Enumerated(EnumType.STRING)
     private PaymentProvider provider;
@@ -46,5 +44,21 @@ public class WebhookEvent extends AggregateRoot {
 
     public static WebhookEvent received(Merchant merchant, ProviderNotification notification, Instant now) {
         return new WebhookEvent(merchant.getProvider(), merchant.getId(), notification, now);
+    }
+
+    public PaymentProvider getProvider() {
+        return provider;
+    }
+
+    public UUID getMerchantId() {
+        return merchantId;
+    }
+
+    public String getEvent() {
+        return event;
+    }
+
+    public String getObjectId() {
+        return objectId;
     }
 }

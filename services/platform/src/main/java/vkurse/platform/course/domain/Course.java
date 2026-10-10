@@ -12,7 +12,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import org.jspecify.annotations.Nullable;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.core.error.Errors.BadRequestException;
@@ -24,7 +23,6 @@ import vkurse.platform.course.domain.CourseErrors.NothingToPublishException;
  */
 @Entity
 @Table(name = "courses")
-@Getter
 public class Course extends AggregateRoot {
     public static final int MAX_TITLE_LENGTH = 150;
     public static final int MAX_SUMMARY_LENGTH = 300;
@@ -96,6 +94,46 @@ public class Course extends AggregateRoot {
                 checked(summary, MAX_SUMMARY_LENGTH, "summary"),
                 checked(description, MAX_DESCRIPTION_LENGTH, "description"),
                 now);
+    }
+
+    public UUID getSchoolId() {
+        return schoolId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public CourseSlug getSlug() {
+        return slug;
+    }
+
+    public @Nullable String getSummary() {
+        return summary;
+    }
+
+    public @Nullable String getDescription() {
+        return description;
+    }
+
+    public @Nullable String getCover() {
+        return cover;
+    }
+
+    public @Nullable UUID getCoverFileId() {
+        return coverFileId;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public @Nullable Instant getPublishedAt() {
+        return publishedAt;
+    }
+
+    public @Nullable Instant getDeletedAt() {
+        return deletedAt;
     }
 
     public boolean belongsTo(UUID schoolId) {

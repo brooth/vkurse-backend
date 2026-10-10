@@ -9,7 +9,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
-import lombok.Getter;
 import vkurse.core.domain.AggregateRoot;
 import vkurse.platform.course.domain.CourseErrors.SectionNotEmptyException;
 import vkurse.platform.course.domain.CourseErrors.TooManySectionsException;
@@ -17,7 +16,6 @@ import vkurse.platform.course.domain.CourseErrors.TooManySectionsException;
 /** A part of a course: a titled group of lessons, at a position among the course's sections. */
 @Entity
 @Table(name = "course_sections")
-@Getter
 public class Section extends AggregateRoot {
     private UUID courseId;
 
@@ -46,6 +44,18 @@ public class Section extends AggregateRoot {
             throw new TooManySectionsException();
         }
         return new Section(course.getId(), Course.checkedTitle(title), position, now);
+    }
+
+    public UUID getCourseId() {
+        return courseId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public int getPosition() {
+        return position;
     }
 
     public boolean belongsTo(UUID courseId) {
