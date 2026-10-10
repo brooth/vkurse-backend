@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Repository;
@@ -35,6 +36,16 @@ class JpaStoredFileRepository extends JpaAggregateRepository<StoredFile> impleme
     }
 
     @Override
+    public List<StoredFile> findByIds(Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return em.createQuery("SELECT f FROM StoredFile f WHERE f.id IN :ids AND f.deletedAt IS NULL", StoredFile.class)
+                .setParameter("ids", ids)
+                .getResultList();
+    }
+
+    @Override
     public long countPendingByUploader(UUID userId, Instant now) {
         return em.createQuery("""
                         SELECT COUNT(f) FROM StoredFile f
@@ -49,16 +60,16 @@ class JpaStoredFileRepository extends JpaAggregateRepository<StoredFile> impleme
 
     @Override
     public List<StoredFile> findBySchool(
-            UUID schoolId, FilePurpose purpose, @Nullable String search, int limit, int offset) {
+            UUID schoolId, Set<FilePurpose> purposes, @Nullable String search, int limit, int offset) {
         var matching = search == null ? "" : "AND LOWER(f.name) LIKE :pattern ESCAPE '\\'";
         var query = em.createQuery("""
                         SELECT f FROM StoredFile f
-                        WHERE f.schoolId = :schoolId AND f.purpose = :purpose AND f.status = :ready
+                        WHERE f.schoolId = :schoolId AND f.purpose IN :purposes AND f.status = :ready
                           AND f.deletedAt IS NULL %s
                         ORDER BY f.createdAt DESC, f.id DESC
                         """.formatted(matching), StoredFile.class)
                 .setParameter("schoolId", schoolId)
-                .setParameter("purpose", purpose)
+                .setParameter("purposes", purposes)
                 .setParameter("ready", StoredFile.Status.READY);
         if (search != null) {
             query.setParameter("pattern", "%" + escapeLike(search) + "%");

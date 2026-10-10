@@ -38,7 +38,10 @@ public class StoredFile extends AggregateRoot {
      */
     public static final Duration UPLOAD_TTL = Duration.ofHours(2);
 
-    /** How long a signed download link works. */
+    /** How long a signed link to a video works: long enough to watch it through. */
+    public static final Duration VIDEO_LINK_TTL = Duration.ofHours(6);
+
+    /** How long any other signed link works. */
     public static final Duration DOWNLOAD_TTL = Duration.ofHours(1);
 
     /** How many unfinished uploads one user may have. */
@@ -121,14 +124,17 @@ public class StoredFile extends AggregateRoot {
         return new StoredFile(purpose, schoolId, uploadedBy, checkedName(name), plainType, size, now);
     }
 
-    /** Whether this is the upload of that user, for that purpose and that school ({@code null} for a user's own file). */
-    public boolean isUploadOf(UUID userId, FilePurpose purpose, @Nullable UUID schoolId) {
-        return uploadedBy.equals(userId) && this.purpose == purpose && Objects.equals(this.schoolId, schoolId);
+    /**
+     * Whether this is the upload of that user, for one of those purposes and that school ({@code null} for a user's own
+     * file).
+     */
+    public boolean isUploadOf(UUID userId, Set<FilePurpose> purposes, @Nullable UUID schoolId) {
+        return uploadedBy.equals(userId) && purposes.contains(purpose) && Objects.equals(this.schoolId, schoolId);
     }
 
-    /** Whether this is a confirmed file of that school, for that purpose. */
-    public boolean isReadyFileOf(UUID schoolId, FilePurpose purpose) {
-        return isReady() && this.purpose == purpose && schoolId.equals(this.schoolId);
+    /** Whether this is a confirmed file of that school, for one of those purposes. */
+    public boolean isReadyFileOf(UUID schoolId, Set<FilePurpose> purposes) {
+        return isReady() && purposes.contains(purpose) && schoolId.equals(this.schoolId);
     }
 
     public boolean isReady() {
@@ -160,7 +166,18 @@ public class StoredFile extends AggregateRoot {
     public void delete(Instant now) {
         if (deletedAt == null) {
             deletedAt = now;
+            raise(new StoredFileDeleted(getId()));
         }
+    }
+
+    /** Whether a browser shows the file in the page (an image, a video) instead of saving it. */
+    public boolean isShownInline() {
+        return contentType.startsWith("image/") || contentType.startsWith("video/");
+    }
+
+    /** How long a signed link to this file works. */
+    public Duration linkTtl() {
+        return purpose == FilePurpose.SCHOOL_VIDEO ? VIDEO_LINK_TTL : DOWNLOAD_TTL;
     }
 
     public boolean isDeleted() {

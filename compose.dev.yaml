@@ -42,8 +42,8 @@ services:
       SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
       AUTH_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
       DATABASE_URL: postgres://supabase_storage_admin:postgres@db:5432/postgres
-      # The largest file any bucket may hold (50 MB). Each bucket sets its own lower limit.
-      FILE_SIZE_LIMIT: 52428800
+      # The largest file any bucket may hold (2 GB, a video). Each bucket sets its own lower limit.
+      FILE_SIZE_LIMIT: 2147483648
       # Seconds a signed upload link works. Keep it at StoredFile.UPLOAD_TTL (2 hours, as on hosted Supabase).
       UPLOAD_SIGNED_URL_EXPIRATION_TIME: 7200
       STORAGE_BACKEND: file

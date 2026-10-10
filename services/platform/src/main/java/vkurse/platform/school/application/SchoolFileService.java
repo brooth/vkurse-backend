@@ -32,29 +32,29 @@ public class SchoolFileService {
 
     public Upload requestUpload(UUID userId, UUID schoolId, String name, String contentType, long size) {
         staff.require(schoolId, userId).ensureCanManageFiles();
-        return files.requestUpload(FilePurpose.SCHOOL_FILE, schoolId, userId, name, contentType, size);
+        return files.requestUpload(FilePurpose.inLibrary(contentType), schoolId, userId, name, contentType, size);
     }
 
     /** Puts a file the caller uploaded into the library, once storage really holds it. */
     public StoredFile confirm(UUID userId, UUID schoolId, UUID fileId) {
         staff.require(schoolId, userId).ensureCanManageFiles();
-        return files.confirm(fileId, userId, FilePurpose.SCHOOL_FILE, schoolId);
+        return files.confirm(fileId, userId, FilePurpose.LIBRARY, schoolId);
     }
 
     /** The library, newest first. {@code $search} looks in the file names. */
     public List<StoredFile> list(UUID userId, UUID schoolId, Paging paging) {
         staff.require(schoolId, userId);
-        return files.findBySchool(schoolId, FilePurpose.SCHOOL_FILE, paging.search(), paging.limit(), paging.offset());
+        return files.findBySchool(schoolId, FilePurpose.LIBRARY, paging.search(), paging.limit(), paging.offset());
     }
 
     /** A signed link that downloads the file, for a short time. */
     public Download download(UUID userId, UUID schoolId, UUID fileId) {
         staff.require(schoolId, userId);
-        return files.download(files.get(schoolId, FilePurpose.SCHOOL_FILE, fileId));
+        return files.download(files.get(schoolId, FilePurpose.LIBRARY, fileId));
     }
 
     public void delete(UUID userId, UUID schoolId, UUID fileId) {
         staff.require(schoolId, userId).ensureCanManageFiles();
-        files.delete(files.get(schoolId, FilePurpose.SCHOOL_FILE, fileId).getId());
+        files.delete(files.get(schoolId, FilePurpose.LIBRARY, fileId).getId());
     }
 }

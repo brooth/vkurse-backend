@@ -7,12 +7,14 @@ package vkurse.platform.school.web;
 
 import java.time.Instant;
 import java.util.UUID;
+import vkurse.platform.storage.domain.FilePurpose;
 import vkurse.platform.storage.domain.StoredFile;
 
 /** A stored file as the API shows it. It has no link: a download link is asked for when it is needed. */
 public record FileResponse(
         UUID id,
         Instant createdAt,
+        FilePurpose purpose,
         String name,
         String contentType,
         long size,
@@ -23,6 +25,7 @@ public record FileResponse(
         return new FileResponse(
                 file.getId(),
                 file.getCreatedAt(),
+                file.getPurpose(),
                 file.getName(),
                 file.getContentType(),
                 file.getSize(),

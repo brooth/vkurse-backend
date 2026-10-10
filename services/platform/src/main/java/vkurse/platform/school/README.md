@@ -53,6 +53,9 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 | Change and remove the logo | ✓ | ✓ | | |
 | List and download the files of the library | ✓ | ✓ | ✓ | ✓ |
 | Upload files to the library, delete them | ✓ | ✓ | ✓ | |
+| See courses and lessons | ✓ | ✓ | ✓ | ✓ |
+| Create, edit and publish courses | ✓ | ✓ | ✓ | |
+| Delete a course | ✓ | ✓ | | |
 | Delete the school, transfer it | ✓ | | | |
 
 - A school has exactly one owner (`school_members_owner_key`). The role is never invited or assigned: it moves only by a transfer, which makes the old owner an admin.
@@ -74,7 +77,9 @@ Add a method to `SchoolRole` and an `ensureCan…` to `SchoolMember` when a modu
 **Logo and file library** (the files are kept by the [storage module](../storage/README.md), which has the limits)
 - An upload takes three steps: ask for an upload link, `PUT` the raw file to it with the declared content type, then confirm. Only a confirmed file is used.
 - The logo is a public image (png, jpeg or webp, at most 5 MB): `logo` in the responses is its lasting link. Setting a logo deletes the one it replaces.
-- The library holds private files (at most 50 MB) the staff will use in lessons. A file is downloaded with a signed link that works for an hour. Only the uploader confirms an upload. A file of another school is 404.
+- The library holds private files (at most 50 MB) and videos (mp4, webm or mov, at most 2 GB) the staff use in lessons. A file is downloaded with a signed link that works for an hour. Only the uploader confirms an upload. A file of another school is 404.
+- A video is uploaded in pieces that can resume: its `UploadResponse` has `resumable` instead of `uploadUrl` (see the [storage module](../storage/README.md#rules)).
+- A file that a lesson shows can't be deleted: 409 `course/file-in-use`.
 - Deleting a school keeps its logo and files.
 
 ## Endpoints
@@ -114,8 +119,8 @@ Lists take `$limit` and `$skip`.
 
 - `SchoolResponse`: `id`, `createdAt`, `updatedAt`, `name`, `slug`, `description`, `logo`, and the caller's own `memberId` and `role`.
 - `SchoolPublicResponse`: `id`, `name`, `slug`, `description`, `logo`.
-- `UploadResponse`: `file` (a `FileResponse`), `uploadUrl`, `expiresAt`.
-- `FileResponse`: `id`, `createdAt`, `name`, `contentType`, `size` (bytes), `status` (`PENDING`, `READY`), `uploadedBy`.
+- `UploadResponse`: `file` (a `FileResponse`), `expiresAt`, and either `uploadUrl` or, for a video, `resumable { endpoint, signature, bucketName, objectName }`.
+- `FileResponse`: `id`, `createdAt`, `purpose` (`SCHOOL_FILE`, `SCHOOL_VIDEO`), `name`, `contentType`, `size` (bytes), `status` (`PENDING`, `READY`), `uploadedBy`.
 - `MemberResponse`: `id`, `createdAt`, `role`, `user { id, name, email, picture }`. `StudentResponse` is the same without `role`.
 - `InvitationResponse`: `id`, `createdAt`, `email`, `role`, `invitedBy`, `expiresAt`.
 

@@ -11,9 +11,13 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
@@ -30,6 +34,7 @@ import org.springframework.web.client.RestClientResponseException;
 import vkurse.platform.storage.StorageProperties;
 import vkurse.platform.storage.domain.FilePurpose;
 import vkurse.platform.storage.domain.FileStorage;
+import vkurse.platform.storage.domain.ResumableUpload;
 import vkurse.platform.storage.domain.StoredFile;
 import vkurse.platform.storage.domain.StoredObject;
 
@@ -70,8 +75,9 @@ class SupabaseFileStorage implements FileStorage, ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        ensureBucket(properties.publicBucket(), true);
-        ensureBucket(properties.privateBucket(), false);
+        for (var bucket : FilePurpose.Bucket.values()) {
+            ensureBucket(bucket);
+        }
     }
 
     @Override
@@ -87,6 +93,46 @@ class SupabaseFileStorage implements FileStorage, ApplicationRunner {
     }
 
     @Override
+    public ResumableUpload signResumableUpload(StoredFile file) {
+        // The same signed token as for a plain upload; the tus endpoint for signed uploads takes it in a header.
+        var signed = client.post()
+                .uri("/object/upload/sign/" + location(file))
+                .retrieve()
+                .body(SignedUpload.class);
+        if (signed == null || signed.token() == null) {
+            throw new IllegalStateException("Storage returned no upload token");
+        }
+        return new ResumableUpload(
+                URI.create(publicBase + "/upload/resumable/sign"),
+                signed.token(),
+                bucket(file.getPurpose().bucket()),
+                file.getPath());
+    }
+
+    @Override
+    public Map<UUID, URI> signLinks(Collection<StoredFile> files, Duration ttl) {
+        var links = new HashMap<UUID, URI>();
+        files.stream()
+                .collect(Collectors.groupingBy(file -> bucket(file.getPurpose().bucket())))
+                .forEach((bucket, group) -> {
+                    var byPath = group.stream().collect(Collectors.toMap(StoredFile::getPath, Function.identity()));
+                    var signed = client.post()
+                            .uri("/object/sign/" + bucket)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(new SignManyRequest(ttl.toSeconds(), List.copyOf(byPath.keySet())))
+                            .retrieve()
+                            .body(SignedPath[].class);
+                    for (var link : signed == null ? new SignedPath[0] : signed) {
+                        var file = byPath.get(link.path());
+                        if (file != null && link.signedUrl() != null) {
+                            links.put(file.getId(), URI.create(publicBase + link.signedUrl() + disposition(file)));
+                        }
+                    }
+                });
+        return links;
+    }
+
+    @Override
     public URI signDownload(StoredFile file, Duration ttl) {
         var signed = client.post()
                 .uri("/object/sign/" + location(file))
@@ -97,9 +143,7 @@ class SupabaseFileStorage implements FileStorage, ApplicationRunner {
         if (signed == null || signed.signedUrl() == null) {
             throw new IllegalStateException("Storage returned no download link");
         }
-        // `download` makes storage send the file as an attachment under that name, so a browser saves it.
-        var name = URLEncoder.encode(file.getName(), StandardCharsets.UTF_8).replace("+", "%20");
-        return URI.create(publicBase + signed.signedUrl() + "&download=" + name);
+        return URI.create(publicBase + signed.signedUrl() + attachment(file));
     }
 
     @Override
@@ -133,7 +177,7 @@ class SupabaseFileStorage implements FileStorage, ApplicationRunner {
     public void delete(Collection<StoredFile> files) {
         files.stream()
                 .collect(Collectors.groupingBy(
-                        file -> bucket(file.getPurpose().isPublic()),
+                        file -> bucket(file.getPurpose().bucket()),
                         Collectors.mapping(StoredFile::getPath, Collectors.toList())))
                 .forEach((bucket, paths) -> client.method(HttpMethod.DELETE)
                         .uri("/object/" + bucket)
@@ -144,9 +188,10 @@ class SupabaseFileStorage implements FileStorage, ApplicationRunner {
     }
 
     /** Creates the bucket, or brings an existing one to the limits of today's purposes. */
-    private void ensureBucket(String name, boolean isPublic) {
+    private void ensureBucket(FilePurpose.Bucket bucket) {
+        var name = bucket(bucket);
         var settings =
-                new Bucket(name, name, isPublic, FilePurpose.maxSize(isPublic), FilePurpose.contentTypes(isPublic));
+                new Bucket(name, name, bucket == FilePurpose.Bucket.PUBLIC, bucket.maxSize(), bucket.contentTypes());
         try {
             client.post()
                     .uri("/bucket")
@@ -170,11 +215,25 @@ class SupabaseFileStorage implements FileStorage, ApplicationRunner {
 
     /** A path has only letters, digits, hyphens, dots and slashes (see {@code FilePurpose}), so it needs no encoding. */
     private String location(StoredFile file) {
-        return bucket(file.getPurpose().isPublic()) + "/" + file.getPath();
+        return bucket(file.getPurpose().bucket()) + "/" + file.getPath();
     }
 
-    private String bucket(boolean isPublic) {
-        return isPublic ? properties.publicBucket() : properties.privateBucket();
+    private String bucket(FilePurpose.Bucket bucket) {
+        return switch (bucket) {
+            case PUBLIC -> properties.publicBucket();
+            case PRIVATE -> properties.privateBucket();
+            case VIDEO -> properties.videoBucket();
+        };
+    }
+
+    /** `download` makes storage send the file as an attachment under that name, so a browser saves it. */
+    private static String attachment(StoredFile file) {
+        return "&download="
+                + URLEncoder.encode(file.getName(), StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
+    private static String disposition(StoredFile file) {
+        return file.isShownInline() ? "" : attachment(file);
     }
 
     private static @Nullable String code(RestClientResponseException e) {
@@ -198,9 +257,16 @@ class SupabaseFileStorage implements FileStorage, ApplicationRunner {
             @JsonProperty("file_size_limit") long fileSizeLimit,
             @JsonProperty("allowed_mime_types") Set<String> allowedMimeTypes) {}
 
-    private record SignedUpload(@Nullable String url) {}
+    private record SignedUpload(
+            @Nullable String url, @Nullable String token) {}
 
     private record SignRequest(long expiresIn) {}
+
+    private record SignManyRequest(long expiresIn, List<String> paths) {}
+
+    private record SignedPath(
+            @Nullable String path,
+            @JsonProperty("signedURL") @Nullable String signedUrl) {}
 
     private record SignedDownload(
             @JsonProperty("signedURL") @Nullable String signedUrl) {}

@@ -36,6 +36,16 @@ public enum SchoolRole {
         return this == OWNER || this == ADMIN || this == AUTHOR;
     }
 
+    /** Whether this role may create courses, edit them and their lessons, and publish them. Every role may see them. */
+    public boolean canEditCourses() {
+        return this == OWNER || this == ADMIN || this == AUTHOR;
+    }
+
+    /** Whether this role may delete a course. */
+    public boolean canDeleteCourses() {
+        return this == OWNER || this == ADMIN;
+    }
+
     /**
      * Whether this role may invite someone as {@code target}, give a member that role, take it away, or remove a
      * member who has it. Nobody manages an owner, and an admin doesn't manage admins.

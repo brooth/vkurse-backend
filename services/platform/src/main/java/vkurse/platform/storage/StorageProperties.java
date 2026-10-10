@@ -23,6 +23,7 @@ import org.springframework.validation.annotation.Validated;
  *     named after a word in the API's paths ({@code public}, {@code sign}, {@code info}, {@code upload},
  *     {@code authenticated}): storage would then misread the path
  * @param privateBucket bucket for files read only with a signed link (school files). Created at startup
+ * @param videoBucket bucket for video, read only with a signed link. Created at startup
  */
 @Validated
 @ConfigurationProperties("vkurse.storage")
@@ -31,4 +32,5 @@ public record StorageProperties(
         @NotNull URI publicUrl,
         @NotBlank String serviceKey,
         @NotBlank @Pattern(regexp = "[a-z0-9][a-z0-9-]*") String publicBucket,
-        @NotBlank @Pattern(regexp = "[a-z0-9][a-z0-9-]*") String privateBucket) {}
+        @NotBlank @Pattern(regexp = "[a-z0-9][a-z0-9-]*") String privateBucket,
+        @NotBlank @Pattern(regexp = "[a-z0-9][a-z0-9-]*") String videoBucket) {}

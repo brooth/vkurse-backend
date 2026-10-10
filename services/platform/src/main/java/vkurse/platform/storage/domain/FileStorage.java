@@ -8,7 +8,9 @@ package vkurse.platform.storage.domain;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Port: the storage server that keeps the files' bytes. Every method but {@link #publicUrl} calls it over the network,
@@ -22,8 +24,17 @@ public interface FileStorage {
      */
     URI signUpload(StoredFile file);
 
+    /** What the client needs to upload a big file in pieces that can resume. The same limits apply. */
+    ResumableUpload signResumableUpload(StoredFile file);
+
     /** A link that downloads the file under its own name, for {@code ttl}. For a file that is not public. */
     URI signDownload(StoredFile file, Duration ttl);
+
+    /**
+     * Links to show files in a page, each for {@code ttl}, by file id: an image or a video is served to be shown, any
+     * other file to be saved under its name. One call to storage per bucket. A file storage doesn't hold gets no link.
+     */
+    Map<UUID, URI> signLinks(Collection<StoredFile> files, Duration ttl);
 
     /** The lasting link of a public file. Computed, with no call to storage. */
     URI publicUrl(StoredFile file);

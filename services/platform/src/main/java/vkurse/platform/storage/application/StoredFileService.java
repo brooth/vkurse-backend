@@ -6,9 +6,15 @@
 package vkurse.platform.storage.application;
 
 import java.time.Clock;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -27,7 +33,7 @@ import vkurse.platform.storage.domain.Upload;
  * Files, for the modules that own them. This service checks what a file is (its purpose, size, type, uploader and
  * school); <b>who may upload, see or delete it is the calling module's check</b>, made before it calls here.
  *
- * <p>{@link #requestUpload}, {@link #confirm} and {@link #download} talk to the storage server: call them outside a
+ * <p>{@link #requestUpload}, {@link #confirm}, {@link #download} and {@link #links} talk to the storage server: call them outside a
  * database transaction.
  */
 @Service
@@ -65,9 +71,11 @@ public class StoredFileService {
                 size,
                 files.countPendingByUploader(uploadedBy, now),
                 now);
-        var url = storage.signUpload(file);
+        var upload = purpose.isResumable()
+                ? new Upload(file, null, storage.signResumableUpload(file))
+                : new Upload(file, storage.signUpload(file), null);
         transaction.executeWithoutResult(status -> files.save(file));
-        return new Upload(file, url);
+        return upload;
     }
 
     /**
@@ -78,8 +86,13 @@ public class StoredFileService {
      * @throws UploadIncompleteException storage has no file yet
      */
     public StoredFile confirm(UUID fileId, UUID uploadedBy, FilePurpose purpose, @Nullable UUID schoolId) {
+        return confirm(fileId, uploadedBy, Set.of(purpose), schoolId);
+    }
+
+    /** As {@link #confirm(UUID, UUID, FilePurpose, UUID)}, for an upload that may be for any of several purposes. */
+    public StoredFile confirm(UUID fileId, UUID uploadedBy, Set<FilePurpose> purposes, @Nullable UUID schoolId) {
         var upload = files.findById(fileId)
-                .filter(file -> file.isUploadOf(uploadedBy, purpose, schoolId))
+                .filter(file -> file.isUploadOf(uploadedBy, purposes, schoolId))
                 .orElseThrow(StoredFileService::notFound);
         if (upload.isReady()) {
             return upload;
@@ -92,19 +105,35 @@ public class StoredFileService {
         }));
     }
 
-    /** A confirmed file of a school. */
+    /** A confirmed file of a school, for one of those purposes. */
     @Transactional(readOnly = true)
-    public StoredFile get(UUID schoolId, FilePurpose purpose, UUID fileId) {
+    public StoredFile get(UUID schoolId, Set<FilePurpose> purposes, UUID fileId) {
         return files.findById(fileId)
-                .filter(file -> file.isReadyFileOf(schoolId, purpose))
+                .filter(file -> file.isReadyFileOf(schoolId, purposes))
                 .orElseThrow(StoredFileService::notFound);
+    }
+
+    /**
+     * Confirmed files of a school, for those purposes, by id.
+     *
+     * @throws NotFoundException one of the ids is not such a file
+     */
+    @Transactional(readOnly = true)
+    public Map<UUID, StoredFile> getAll(UUID schoolId, Set<FilePurpose> purposes, Collection<UUID> fileIds) {
+        var found = files.findByIds(fileIds).stream()
+                .filter(file -> file.isReadyFileOf(schoolId, purposes))
+                .collect(Collectors.toMap(StoredFile::getId, Function.identity()));
+        if (!found.keySet().containsAll(fileIds)) {
+            throw notFound();
+        }
+        return found;
     }
 
     /** The confirmed files of a school, newest first; {@code search} looks in their names. */
     @Transactional(readOnly = true)
     public List<StoredFile> findBySchool(
-            UUID schoolId, FilePurpose purpose, @Nullable String search, int limit, int offset) {
-        return files.findBySchool(schoolId, purpose, search, limit, offset);
+            UUID schoolId, Set<FilePurpose> purposes, @Nullable String search, int limit, int offset) {
+        return files.findBySchool(schoolId, purposes, search, limit, offset);
     }
 
     /** A link to read the file with: its lasting link if it is public, a signed one that soon expires if not. */
@@ -114,6 +143,20 @@ public class StoredFileService {
         }
         var expiresAt = clock.instant().plus(StoredFile.DOWNLOAD_TTL);
         return new Download(storage.signDownload(file, StoredFile.DOWNLOAD_TTL), expiresAt);
+    }
+
+    /**
+     * Signed links to show private files in a page, by file id: a video for 6 hours, anything else for an hour. An
+     * image or a video is served to be shown, any other file to be saved. A file storage doesn't hold gets no link.
+     */
+    public Map<UUID, Download> links(Collection<StoredFile> shown) {
+        var now = clock.instant();
+        var links = new HashMap<UUID, Download>();
+        shown.stream()
+                .collect(Collectors.groupingBy(StoredFile::linkTtl))
+                .forEach((ttl, group) -> storage.signLinks(group, ttl)
+                        .forEach((fileId, url) -> links.put(fileId, new Download(url, now.plus(ttl)))));
+        return links;
     }
 
     /**

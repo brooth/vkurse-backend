@@ -1,6 +1,6 @@
 # `services/platform`
 
-> Users, authentication, schools and file storage. The only service that issues tokens; every other service verifies them with the keys published at `/.well-known/jwks.json`.
+> Users, authentication, schools, courses and file storage. The only service that issues tokens; every other service verifies them with the keys published at `/.well-known/jwks.json`.
 
 Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one module (a Spring Modulith application module), split into four layers.
 
@@ -9,6 +9,7 @@ Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one modu
 | [`user/`](src/main/java/vkurse/platform/user/README.md) | The `User` aggregate and the caller's own profile (`/users/me`) |
 | [`auth/`](src/main/java/vkurse/platform/auth/README.md) | Sessions, our JWTs, email OTP, Google and Apple sign-in, the security filter chain |
 | [`school/`](src/main/java/vkurse/platform/school/README.md) | Schools, their staff with roles, invitations, students, the logo and the file library |
+| [`course/`](src/main/java/vkurse/platform/course/README.md) | Courses, sections and lessons with block content, publishing, the public catalog with search |
 | [`storage/`](src/main/java/vkurse/platform/storage/README.md) | Files in Supabase Storage: signed uploads and downloads, per-school paths |
 
 | Layer | Holds | May use |

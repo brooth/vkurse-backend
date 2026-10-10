@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 
@@ -19,11 +20,14 @@ public interface StoredFileRepository {
 
     Optional<StoredFile> findByIdForUpdate(UUID id);
 
+    List<StoredFile> findByIds(Collection<UUID> ids);
+
     /** How many uploads the user started and has neither confirmed nor let expire. */
     long countPendingByUploader(UUID userId, Instant now);
 
-    /** The confirmed files of a school for one purpose, newest first; {@code search} looks in their names. */
-    List<StoredFile> findBySchool(UUID schoolId, FilePurpose purpose, @Nullable String search, int limit, int offset);
+    /** The confirmed files of a school for those purposes, newest first; {@code search} looks in their names. */
+    List<StoredFile> findBySchool(
+            UUID schoolId, Set<FilePurpose> purposes, @Nullable String search, int limit, int offset);
 
     /** Files whose objects and rows may go: the deleted ones, and uploads that expired unconfirmed. Oldest first. */
     List<StoredFile> findRemovable(Instant now, int limit);

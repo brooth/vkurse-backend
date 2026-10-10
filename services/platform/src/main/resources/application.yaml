@@ -118,6 +118,7 @@ vkurse:
     # Created at startup. Not `public`, `sign`, `info`, `upload` or `authenticated`: those are words in the API's paths.
     public-bucket: vkurse-public
     private-bucket: vkurse-private
+    video-bucket: vkurse-video
   notification:
     mail-from: ${VKURSE_MAIL_FROM}
     telegram:

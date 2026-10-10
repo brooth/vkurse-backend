@@ -12,6 +12,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.net.URI;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -67,7 +68,9 @@ class UserPictureController {
     record UploadResponse(UUID fileId, URI uploadUrl, Instant expiresAt) {
         static UploadResponse of(Upload upload) {
             return new UploadResponse(
-                    upload.file().getId(), upload.url(), upload.file().getUploadExpiresAt());
+                    upload.file().getId(),
+                    Objects.requireNonNull(upload.url()),
+                    upload.file().getUploadExpiresAt());
         }
     }
 
