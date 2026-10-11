@@ -5,7 +5,10 @@
  */
 package vkurse.platform.school.infrastructure;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Repository;
@@ -62,6 +65,30 @@ class JpaSchoolMemberRepository extends JpaAggregateRepository<SchoolMember> imp
                 .setMaxResults(limit)
                 .setFirstResult(offset)
                 .getResultList();
+    }
+
+    @Override
+    public Map<UUID, SchoolRole> findRoles(UUID schoolId, Collection<UUID> userIds) {
+        var roles = new HashMap<UUID, SchoolRole>();
+        if (userIds.isEmpty()) {
+            return roles;
+        }
+        em.createQuery(
+                        "SELECT m FROM SchoolMember m WHERE m.schoolId = :schoolId AND m.userId IN :userIds",
+                        SchoolMember.class)
+                .setParameter("schoolId", schoolId)
+                .setParameter("userIds", userIds)
+                .getResultList()
+                .forEach(member -> roles.put(member.getUserId(), member.getRole()));
+        return roles;
+    }
+
+    @Override
+    public List<UUID> findSchoolIds(UUID userId) {
+        return em.createQuery("""
+                        SELECT m.schoolId FROM SchoolMember m JOIN School s ON s.id = m.schoolId
+                        WHERE m.userId = :userId AND s.deletedAt IS NULL
+                        """, UUID.class).setParameter("userId", userId).getResultList();
     }
 
     @Override

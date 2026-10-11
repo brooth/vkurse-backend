@@ -87,13 +87,15 @@ public class Course extends AggregateRoot {
             @Nullable String summary,
             @Nullable String description,
             Instant now) {
-        return new Course(
+        var course = new Course(
                 schoolId,
                 checkedTitle(title),
                 slug,
                 checked(summary, MAX_SUMMARY_LENGTH, "summary"),
                 checked(description, MAX_DESCRIPTION_LENGTH, "description"),
                 now);
+        course.raise(new CourseDrafted(course.getId(), schoolId));
+        return course;
     }
 
     public UUID getSchoolId() {

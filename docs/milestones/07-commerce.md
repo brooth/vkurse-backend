@@ -15,7 +15,7 @@
 | Public list of a course's offers on sale | Done |
 | Access to lessons, "my courses", taking access away after a refund | Done in M8 |
 | Bundles of courses, installments, gifts, invoices for companies, a crossed-out old price | Not done |
-| Sales reports | Not done: M11 |
+| Sales reports | Not done: M12 |
 | Notifying the staff of a sale | Not done |
 | Refunding automatically a payment for a course the buyer already has | Not done: it is logged as an error for the staff |
 

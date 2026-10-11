@@ -34,6 +34,8 @@ It depends on [`course`](../course/README.md) (what is studied), [`commerce`](..
 - Without access now, the course and everything in it is 404 for the student, as if it didn't exist.
 - A student keeps a course that was unpublished (taken out of the catalog); a deleted course is gone. Only published lessons are shown and counted.
 
+- Having a course also puts the student in the course's [chat](../chat/README.md) (`EnrollmentService.hasCourse`).
+
 **Which lessons are open** (the lesson's `drip` and `stop` are set by the authors, in the [course module](../course/README.md#rules))
 - Lessons go in the course's order: sections by position, then lessons by position.
 - **A lesson is open when its drip time has come and every stop lesson before it is completed.** `AFTER_DAYS` counts from when the student first got the course; `AT_TIME` is the same for everyone.

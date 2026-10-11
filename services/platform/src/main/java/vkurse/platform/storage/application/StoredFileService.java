@@ -136,6 +136,17 @@ public class StoredFileService {
         return found;
     }
 
+    /** As {@link #getAll}, but an id that is not such a file is left out instead of refused. */
+    @Transactional(readOnly = true)
+    public Map<UUID, StoredFile> findAll(UUID schoolId, Set<FilePurpose> purposes, Collection<UUID> fileIds) {
+        if (fileIds.isEmpty()) {
+            return Map.of();
+        }
+        return files.findByIds(fileIds).stream()
+                .filter(file -> file.isReadyFileOf(schoolId, purposes))
+                .collect(Collectors.toMap(StoredFile::getId, Function.identity()));
+    }
+
     /** The confirmed files of a school, newest first; {@code search} looks in their names. */
     @Transactional(readOnly = true)
     public List<StoredFile> findBySchool(

@@ -25,6 +25,8 @@ public enum FilePurpose {
     SCHOOL_FILE(true, Bucket.PRIVATE, "files", FilePurpose.MAX_LIBRARY_FILE_SIZE, Types.LIBRARY),
     /** A file a student hands in with homework. It is kept for the school; read only with a signed link. */
     HOMEWORK_FILE(true, Bucket.PRIVATE, "homework", FilePurpose.MAX_LIBRARY_FILE_SIZE, Types.LIBRARY),
+    /** A file attached to a message in a course's chat. It is kept for the school; read only with a signed link. */
+    CHAT_FILE(true, Bucket.PRIVATE, "chat", FilePurpose.MAX_LIBRARY_FILE_SIZE, Types.LIBRARY),
     /** A video in a school's library. Read only with a signed link; too big for one request, so its upload resumes. */
     SCHOOL_VIDEO(true, Bucket.VIDEO, "videos", FilePurpose.MAX_VIDEO_SIZE, Types.VIDEOS);
 

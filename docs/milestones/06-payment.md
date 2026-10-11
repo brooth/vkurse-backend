@@ -18,7 +18,7 @@
 | T-Bank, Robokassa; YooKassa partner OAuth | Not done: each is one more adapter, or one more way to connect |
 | Saved cards, autopay, two-step payments | Not done |
 | Vkurse's own shop, the school balance, storage charges | Not done: M10 |
-| Rate limiting and an IP allowlist on the webhook | Not done: M14 |
+| Rate limiting and an IP allowlist on the webhook | Not done: M15 |
 
 ## Decisions
 

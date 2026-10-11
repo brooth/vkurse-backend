@@ -19,7 +19,7 @@
 | Assigning curators to courses or students | Not done: every staff role reviews everything |
 | Notifying the staff of new homework; reminders to students; a warning before access runs out | Not done |
 | Certificates, comments under lessons, video watch tracking | Not done |
-| Progress and sales reports | Not done: M11 |
+| Progress and sales reports | Not done: M12 |
 
 ## Decisions
 

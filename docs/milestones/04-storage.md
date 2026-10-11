@@ -31,7 +31,7 @@
 - **Consumers keep the public link next to the file id** (`School.logo` + `logoFileId`, `User.picture` + `pictureFileId`). `picture` was already a link (from Google), and lists of schools and people need no lookup. Moving the storage domain later means one `UPDATE`.
 - **Deleting a file marks it (`deleted_at`)** in the caller's transaction. A job removes the object, then the row, so a failed call to storage is retried and never loses a file that is still in use.
 - **The upload link's lifetime is set on the storage server**, not per request. It must be 2 hours there, as `StoredFile.UPLOAD_TTL` (hosted Supabase uses that; self-hosted storage defaults to 60 seconds).
-- **Limits:** png, jpeg and webp up to 5 MB for a logo and a picture; up to 50 MB from an allowlist for the library. No SVG or HTML. At most 20 unfinished uploads per user, the only flood guard until M14.
+- **Limits:** png, jpeg and webp up to 5 MB for a logo and a picture; up to 50 MB from an allowlist for the library. No SVG or HTML. At most 20 unfinished uploads per user, the only flood guard until M15.
 - **In the library**, every staff role lists and downloads; owner, admin and author upload and delete.
 - **Locally, one Postgres serves both** the services (schema `platform`) and Storage (schema `storage`), as in a real Supabase project. It is the Supabase Postgres image, because Storage needs its roles.
 - **A signed link is returned in a JSON body**, never as a redirect.

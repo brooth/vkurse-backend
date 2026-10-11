@@ -31,7 +31,7 @@ How to bring a module from a NestJS + Firestore codebase (the source style this 
 | Client for an outside system (payments, storage) | A port interface in `domain/`, its implementation in `infrastructure/` |
 | `notification/` module, `NotificationService.send([{ data, channels }])` | Already ported, to `libs/core`: inject `NotificationService` (section 10). Don't write a mail port per module |
 | `README.md` | `README.md` in the module package, updated in the same change |
-| `*.spec.ts` | Not now: tests are milestone M13 |
+| `*.spec.ts` | Not now: tests are milestone M14 |
 | `database/migrations/{N}. desc.ts` | `src/main/resources/db/migration/V{N}__desc.sql` in the service (SQL, not code) |
 | `utils/index.ts` barrel | No barrels: import the type directly (`import vkurse.core.error.Errors.NotFoundException;`) |
 | Path aliases (`database/…`, `utils`) | Java packages (`vkurse.core.error`) |
@@ -196,8 +196,8 @@ The source soft-deleted everything into `_bin` collections. In Vkurse each aggre
 | `@Req() req` for a raw webhook body | `@RequestBody String` or a typed record; always verify the payload by re-fetching it from the provider |
 | `@Get` / `@Post` / `@Patch` / `@Delete` | `@GetMapping` / `@PostMapping` / `@PatchMapping` / `@DeleteMapping`. There is no `@PutMapping` for partial updates |
 | `@HttpCode(200)` | The default for GET/POST/PATCH; `ResponseEntity` for anything else |
-| `@UseGuards(ThrottlerGuard)` | Nothing yet: rate limiting arrives in M14 (Bucket4j) |
-| WebSocket gateways (socket.io) | Not ported yet: Spring WebSocket/STOMP or SSE when a module needs it |
+| `@UseGuards(ThrottlerGuard)` | Nothing yet: rate limiting arrives in M15 (Bucket4j) |
+| WebSocket gateways (socket.io) fed by Firestore listeners | Server-sent events (`SseEmitter`), one stream per thing watched, fed by Postgres `NOTIFY` sent in the transaction that made the change; see the chat module. A stream carries only what is new: the client reads the current state by request, and catches up the same way after a break. The token goes in a header, never in the URL |
 
 ### Responses
 | Source | Vkurse |
@@ -239,7 +239,7 @@ Validation errors keep the same `constraints` map, now as a top-level field next
 | `logger.log(...)` | `log.info(...)` |
 | `` `User ${id} created` `` | `log.info("User {} created", id)` (placeholders, not concatenation) |
 | `console.*` | Never |
-| Winston file and Telegram transports | M12 (a Logback appender); prod logs are JSON on stdout |
+| Winston file and Telegram transports | M13 (a Logback appender); prod logs are JSON on stdout |
 
 ## 9. Async work, events and scheduling
 
@@ -315,11 +315,11 @@ The source's `auth` module is ported as the `auth` module of `services/platform`
 | `users.findOneOrCreate({ match: { email } })` in each strategy | `UserService.findOrRegister` (unique index + retry) and `LinkedAccount` keyed by `(provider, sub)` |
 | API key on every login (`apiKey` query/header) | None. Sessions store `provider` and `user_agent` |
 | Session cookie (`setSessionCookie`) | None: bearer tokens only |
-| `@Throttle(...)` on auth routes | Per-email OTP cooldown and per-code attempt limit (rules of `OtpChallenge`); IP rate limiting in M14 |
+| `@Throttle(...)` on auth routes | Per-email OTP cooldown and per-code attempt limit (rules of `OtpChallenge`); IP rate limiting in M15 |
 
 ## 13. Tests
 
-The source has `*.spec.ts` with hand-written Firestore mocks. Don't port them. Tests arrive in M13, with Testcontainers (a real Postgres) instead of mocks.
+The source has `*.spec.ts` with hand-written Firestore mocks. Don't port them. Tests arrive in M14, with Testcontainers (a real Postgres) instead of mocks.
 
 ## 14. Step-by-step: porting one module
 
@@ -349,6 +349,7 @@ The source has `*.spec.ts` with hand-written Firestore mocks. Don't port them. T
 | A merchant's secrets (terminal password, access token) were plain fields of the entity, hidden from responses only by serialization groups | Credentials are a sealed value encrypted in one column (`CredentialCipher`); no response record has a field for them |
 | Payment metadata (`userId`, `amountRub`) read back from the provider decided who was credited and how much | Our own `Payment` row says who paid, to whom and how much; the provider's answer is only compared with it |
 | Spending was refused when the balance was too low, and the account kept lifetime totals and a saved payment method to charge automatically | A school's balance may go below zero (a debt that closes uploads, then reading); totals come from the ledger; no card is ever charged by us |
+| A message was marked read or voted on by its id alone, whoever's conversation it was in | Reach a child through its parent and the parent through the caller: `/chats/{chatId}/messages/{id}`, with the chat's membership checked first |
 | A hard-coded admin API key in code | Roles come from the database; secrets come from config |
 | Updates and deletes weren't scoped to the owner | Every use case for a user takes `userId` and checks ownership (section 5.3) |
 | Events emitted after the write, fire-and-forget (lost on a crash) | Modulith events, stored in the same transaction |

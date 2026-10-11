@@ -5,7 +5,9 @@
  */
 package vkurse.platform.school.domain;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,6 +28,12 @@ public interface SchoolMemberRepository {
 
     /** Whether the user owns a school that is not deleted. */
     boolean ownsLiveSchool(UUID userId);
+
+    /** The roles of those of the given users who are on a school's staff, by user id. */
+    Map<UUID, SchoolRole> findRoles(UUID schoolId, Collection<UUID> userIds);
+
+    /** The ids of the live schools a user works in. */
+    List<UUID> findSchoolIds(UUID userId);
 
     /** The owner of a school. */
     Optional<SchoolMember> findOwner(UUID schoolId);

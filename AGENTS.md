@@ -53,7 +53,7 @@ Vkurse charges a school only from its balance, and only through `BillingAccount`
 No raw types or unchecked casts without a one-line comment explaining why. Packages are `@NullMarked` (JSpecify): everything is non-null unless it is annotated `@Nullable`.
 
 ### 10. Tests
-There are no automated tests until milestone M13. Verify changes by hand (see "Running locally").
+There are no automated tests until milestone M14. Verify changes by hand (see "Running locally").
 
 ### 11. Notifications
 Send email and Telegram only through `NotificationService` from `libs/core` ([how](libs/core/README.md#notifications)); never use `JavaMailSender` directly.

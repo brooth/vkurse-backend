@@ -14,8 +14,8 @@
 | `SchoolMemberService.require(schoolId, userId)`: the role check later modules use | Done |
 | School logo | Not done: needs storage (M4) |
 | Plan limits on schools and members | Not done: billing (M10) |
-| IP rate limiting on invitations | Not done: M14. Until then a school has at most 50 pending invitations |
-| Admin endpoints | Not done: M11 |
+| IP rate limiting on invitations | Not done: M15. Until then a school has at most 50 pending invitations |
+| Admin endpoints | Not done: M12 |
 | Notifying staff when someone joins or is removed | Not done |
 
 ## Decisions

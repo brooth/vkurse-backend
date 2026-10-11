@@ -61,6 +61,7 @@ Before it signs an upload for a school, or a link to a school's private file, th
 | `SCHOOL_LOGO` | a school | anyone, by a lasting link | 5 MB | png, jpeg, webp |
 | `COURSE_COVER` | a school | anyone, by a lasting link | 5 MB | png, jpeg, webp |
 | `SCHOOL_FILE` | a school | a signed link | 50 MB | png, jpeg, webp, pdf, txt, zip, docx, xlsx, pptx, mp3 |
+| `CHAT_FILE` | a school (uploaded by someone in a course's chat) | a signed link | 50 MB | as `SCHOOL_FILE` |
 | `HOMEWORK_FILE` | a school (uploaded by a student) | a signed link | 50 MB | as `SCHOOL_FILE` |
 | `SCHOOL_VIDEO` | a school | a signed link | 2 GB | mp4, webm, mov |
 

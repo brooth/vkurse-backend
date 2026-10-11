@@ -11,8 +11,8 @@
 | Top-ups by owner and admin; credited by `PaymentSucceeded` | Done |
 | Storage usage per school and day; the daily charge at a price per GB a month | Done |
 | Debt: uploads blocked at once, private links after 14 days; emails to the owner | Done |
-| Debit of a refunded top-up (`PaymentRefunded`) | Done, not exercised: nothing can refund a top-up until M11 |
-| Changing the price, adjusting a balance, refunding a top-up | Not done: M11 |
+| Debit of a refunded top-up (`PaymentRefunded`) | Done, not exercised: nothing can refund a top-up until M12 |
+| Changing the price, adjusting a balance, refunding a top-up | Not done: M12 |
 | Saved cards and automatic top-ups | Not done |
 | Invoices and bank transfers for companies | Not done |
 | A free quota, a cap on a school's storage | Not done: every byte is paid |

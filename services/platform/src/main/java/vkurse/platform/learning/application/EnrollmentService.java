@@ -77,6 +77,24 @@ public class EnrollmentService {
         return mine;
     }
 
+    /** Whether a user has a course now. For the modules that open things to a course's students. */
+    @Transactional(readOnly = true)
+    public boolean hasCourse(UUID userId, UUID courseId) {
+        var now = clock.instant();
+        return enrollments
+                .find(userId, courseId)
+                .filter(found -> found.isActive(now))
+                .isPresent();
+    }
+
+    /** The courses a user has now, the latest first. */
+    @Transactional(readOnly = true)
+    public List<UUID> courseIdsOf(UUID userId, int limit) {
+        return enrollments.findActiveByStudent(userId, clock.instant(), limit, 0).stream()
+                .map(Enrollment::getCourseId)
+                .toList();
+    }
+
     /**
      * Gives a course to someone by hand, for some days or with no end. Someone who has no account yet gets one, and
      * they become a student of the school. Someone who has the course gets more of it (see {@link Enrollment#renew}).

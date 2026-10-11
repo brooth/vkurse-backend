@@ -41,7 +41,7 @@
 | A channel without configuration logs a warning at startup and fails at send time | Required settings; a placeholder token works locally |
 | No timeouts on SMTP or the Telegram call | Both have timeouts |
 | A push stub that logs and reports success | Not ported |
-| `support-response` template; the insights message to an ops chat | Not ported: there is no support module, and the ops chat is M12 |
+| `support-response` template; the insights message to an ops chat | Not ported: there is no support module, and the ops chat is M13 |
 
 ## Verified by hand
 

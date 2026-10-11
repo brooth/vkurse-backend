@@ -30,13 +30,13 @@ It depends on [`payment`](../payment/README.md) (Vkurse's own shop, payments and
 **Top-ups**
 - Owner and admin top up, 100 to 100 000 RUB at a time, by a payment to Vkurse's own shop (see the [payment module](../payment/README.md#vkurses-own-shop)). The balance grows when the payment succeeds, a moment after: `PaymentSucceeded` is handled after the payment's transaction.
 - The amount credited is what our own payment row says.
-- A school can't refund a top-up. When Vkurse refunds one (M11), the balance is debited by `PaymentRefunded`.
+- A school can't refund a top-up. When Vkurse refunds one (M12), the balance is debited by `PaymentRefunded`.
 
 **Storage charges**
 - Usage is every confirmed, not deleted file of the school: library files, videos, homework files, the logo, covers. 1 GB is 1024³ bytes.
 - **Each day (Moscow time) a school is charged once** for what it stores when it is measured: `bytes ÷ GB × price ÷ days in this month`, rounded to kopecks. Usage too small to cost half a kopeck a day costs nothing, and makes no ledger row.
 - The job runs every 10 minutes: the first run after midnight does the work, the later ones pick up what failed. A day's usage row is what its charge was computed from, and never changes.
-- The price is the latest row of `billing_storage_prices` that has started. **The seeded 5.00 RUB per GB a month is a placeholder.** A new price is a new row; an admin adds it in M11.
+- The price is the latest row of `billing_storage_prices` that has started. **The seeded 5.00 RUB per GB a month is a placeholder.** A new price is a new row; an admin adds it in M12.
 - A deleted school is not charged.
 
 **A school that owes**

@@ -5,7 +5,9 @@
  */
 package vkurse.platform.school.application;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,6 +44,18 @@ public class SchoolMemberService {
         return members.findMembership(schoolId, userId)
                 .orElseThrow(() -> new NotFoundException("School not found"))
                 .member();
+    }
+
+    /** The roles of those of the given users who are on a school's staff, by user id. It checks nothing about a caller. */
+    @Transactional(readOnly = true)
+    public Map<UUID, SchoolRole> rolesOf(UUID schoolId, Collection<UUID> userIds) {
+        return members.findRoles(schoolId, userIds);
+    }
+
+    /** The ids of the live schools a user works in. */
+    @Transactional(readOnly = true)
+    public List<UUID> schoolIdsOf(UUID userId) {
+        return members.findSchoolIds(userId);
     }
 
     @Transactional(readOnly = true)

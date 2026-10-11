@@ -11,6 +11,7 @@ Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one modu
 | [`school/`](src/main/java/vkurse/platform/school/README.md) | Schools, their staff with roles, invitations, students, the logo and the file library |
 | [`course/`](src/main/java/vkurse/platform/course/README.md) | Courses, sections and lessons with block content, publishing, the public catalog with search |
 | [`billing/`](src/main/java/vkurse/platform/billing/README.md) | A school's balance at Vkurse, top-ups, and the daily charge for the storage it uses |
+| [`chat/`](src/main/java/vkurse/platform/chat/README.md) | A chat per course for its students and the school's staff: messages, banners, attachments, votes, live delivery |
 | [`commerce/`](src/main/java/vkurse/platform/commerce/README.md) | A course's offers, a school's promo codes, orders and checkout |
 | [`learning/`](src/main/java/vkurse/platform/learning/README.md) | Students taking courses: enrollments, which lessons are open, progress, homework and its review, quizzes |
 | [`payment/`](src/main/java/vkurse/platform/payment/README.md) | A school's merchants (its accounts with payment providers), payments to them, refunds, provider notifications |
@@ -36,7 +37,7 @@ Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{descript
 | `VKURSE_NODE_ID` | yes | Instance name used in logs and alerts |
 | `VKURSE_PUBLIC_URL` | yes | Public base URL of this service: token issuer, OAuth redirect URIs |
 | `VKURSE_WEB_URL` | yes | Base URL of the web app: links in our emails (a school invitation) lead there |
-| `DATABASE_URL` / `DATABASE_USER` / `DATABASE_PASSWORD` | no (local defaults) | JDBC connection |
+| `DATABASE_URL` / `DATABASE_USER` / `DATABASE_PASSWORD` | no (local defaults) | JDBC connection. It must be a direct connection to Postgres, not a pooler in transaction mode: the chat module listens for `NOTIFY` on it |
 | `SPRING_PROFILES_ACTIVE` | no (`dev`) | `prod` in production (JSON logs) |
 | `PORT` | no (`8080`) | HTTP port |
 | `VKURSE_STORAGE_URL` | yes | Base URL of the Supabase Storage API as this service reaches it. Locally `http://127.0.0.1:54321`; behind the Supabase gateway it ends with `/storage/v1` |

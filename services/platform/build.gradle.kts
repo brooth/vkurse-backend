@@ -21,7 +21,8 @@ dependencies {
     implementation(libs.spring.modulith.starter.core)
     implementation(libs.spring.modulith.starter.jdbc)
 
-    runtimeOnly(libs.postgresql)
+    // Not runtime-only: the chat module reads Postgres notifications through the driver's own API.
+    implementation(libs.postgresql)
 
     annotationProcessor(libs.spring.boot.configuration.processor)
 }

@@ -5,6 +5,7 @@
 | Layer | File | Description |
 |---|---|---|
 | `domain` | `Course` | The aggregate: `draft`, `changeDetails`, `changeCover`, `publish`, `unpublish`, `delete` |
+| | `CourseDrafted` | Event: a course was made. The [chat module](../chat/README.md) opens the course's chat on it |
 | | `CourseSlug` | Value object: the course's address inside its school |
 | | `Section` | A titled group of lessons at a position in the course |
 | | `Lesson` | Title, content, status, and who sees it when (`preview`, `drip`, `stop`) |

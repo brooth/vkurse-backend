@@ -17,7 +17,7 @@ This is the **main plan**. Every milestone below gets its own detailed plan in `
 | Runtime | Java 25 LTS, Spring Boot 4.1, virtual threads on |
 | Data access | **Hibernate (JPA)** on the aggregates themselves, through one `JpaAggregateRepository` subclass per aggregate, with no Spring Data repositories. **Flyway** only applies versioned schema scripts (`db/migration/V{N}__desc.sql`). We don't use Hibernate's `ddl-auto`, because it isn't safe in prod |
 | API | No wrapper: success returns the resource itself, and errors return the HTTP status plus a flat RFC 9457 body `{ status, title, detail, code, constraints? }`. `code` is kebab-case (`not-found`, `payment-failed/low-amount`). DELETE → `204` |
-| Tests / API docs | Tests are deferred to **M13**. No Swagger/OpenAPI for now |
+| Tests / API docs | Tests are deferred to **M14**. No Swagger/OpenAPI for now |
 | Deletes | Decided per aggregate and named in the model: a deleted user keeps its row (`deleted_at`), a session is revoked (`revoked_at`), used codes are removed. No blanket `deleted_at`, no bin tables |
 | Header | Every source file starts with the header below |
 
@@ -30,7 +30,7 @@ This is the **main plan**. Every milestone below gets its own detailed plan in `
 ```
 
 ## Stack
-Java 25 (records, sealed interfaces, pattern-matching `switch`, virtual threads) · Spring Boot 4.1 (Web MVC, Validation, Security + OAuth2 Resource Server + OAuth2 Client, JPA/Hibernate 7, Actuator, Mail) · PostgreSQL via Supabase · Flyway · Spring Modulith (module declarations + reliable event publication, used as an outbox) · ShedLock (cluster-safe `@Scheduled`) · Jackson `@JsonView` · `RestClient`/`@HttpExchange` + Spring 7 `@Retryable` · Spotless · later: Micrometer/OpenTelemetry/Grafana (M12), Testcontainers/WireMock/ArchUnit (M13).
+Java 25 (records, sealed interfaces, pattern-matching `switch`, virtual threads) · Spring Boot 4.1 (Web MVC, Validation, Security + OAuth2 Resource Server + OAuth2 Client, JPA/Hibernate 7, Actuator, Mail) · PostgreSQL via Supabase · Flyway · Spring Modulith (module declarations + reliable event publication, used as an outbox) · ShedLock (cluster-safe `@Scheduled`) · Jackson `@JsonView` · `RestClient`/`@HttpExchange` + Spring 7 `@Retryable` · Spotless · later: Micrometer/OpenTelemetry/Grafana (M13), Testcontainers/WireMock/ArchUnit (M14).
 
 ## Codebase shape
 
@@ -49,6 +49,7 @@ backend/
     ├── school/                  # School, SchoolMember (roles), SchoolInvitation, SchoolStudent, logo, file library
     ├── course/                  # Course, Section, Lesson (blocks in JSONB), catalog
     ├── billing/                 # BillingAccount, LedgerEntry, StorageUsage, StoragePrice; top-ups, the daily storage charge
+    ├── chat/                    # Chat (one per course), Message with banners, votes, read marks; SSE + NOTIFY
     ├── commerce/                # Offer, PromoCode, Order; checkout
     ├── learning/                # Enrollment, lesson opening (drip, stop), progress, homework, quizzes
     ├── payment/                 # Merchant, Payment, Refund, PaymentGateway port (YooKassa)
@@ -65,7 +66,7 @@ backend/
 
 ## Milestones (one module each, in order)
 
-M1 to M10 are done and live in `services/platform` (M1's foundation is now `libs/core`); M3 is described in [03-school.md](milestones/03-school.md) M4 in [04-storage.md](milestones/04-storage.md), M5 in [05-course.md](milestones/05-course.md), M6 in [06-payment.md](milestones/06-payment.md), M7 in [07-commerce.md](milestones/07-commerce.md), M8 in [08-learning.md](milestones/08-learning.md) and M10 in [10-billing.md](milestones/10-billing.md). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
+M1 to M11 are done and live in `services/platform` (M1's foundation is now `libs/core`); M3 is described in [03-school.md](milestones/03-school.md) M4 in [04-storage.md](milestones/04-storage.md), M5 in [05-course.md](milestones/05-course.md), M6 in [06-payment.md](milestones/06-payment.md), M7 in [07-commerce.md](milestones/07-commerce.md), M8 in [08-learning.md](milestones/08-learning.md), M10 in [10-billing.md](milestones/10-billing.md) and M11 in [11-chat.md](milestones/11-chat.md). The mechanism of M9 is done ahead of order, in `libs/core`; the notifications of later modules arrive with them. Which service each later module lands in is decided in its milestone plan. The table keeps the original scope; where it names the old generic services (`UserOwnedEntityService`, `SchoolOwnedEntityService`), read "the aggregate and its application service check ownership".
 
 | # | Module | Scope | Done when |
 |---|---|---|---|
@@ -79,10 +80,11 @@ M1 to M10 are done and live in `services/platform` (M1's foundation is now `libs
 | M8 | **Learning** | `Enrollment`, lesson unlock (drip/stop lessons), progress, homework + curator review, quizzes | Paid student progresses, and accepted homework unlocks the next lesson |
 | M9 | **Notification & i18n** | In `libs/core`: channels with fallback (email via Thymeleaf ru templates, Telegram), send now or store and retry, `MessageSource`, the OTP email moved from `auth` to a template, a welcome email on sign-up. Push tokens are deferred. See [09-notification.md](milestones/09-notification.md) | Emails show up in Mailpit |
 | M10 | **Billing** | Storage usage metering per school, the storage price, school balance + ledger, top-ups through Vkurse's own shop, charges for usage (from the balance only), what happens at zero balance. No plans, no subscriptions | A school tops up in the test shop, and a storage charge is taken from its balance |
-| M11 | **Admin** | `/admin/**` for users, schools, storage prices, payments and balance adjustments; SQL-view reports | Admin can manage everything above |
-| M12 | **Monitoring** | Actuator, Micrometer, OpenTelemetry → Grafana LGTM, JSON logs, Telegram error appender, admin insights | Traces and metrics visible in Grafana |
-| M13 | **Tests & CI** | Testcontainers, WireMock, Modulith scenario tests, ArchUnit rules, GitHub Actions, image build | CI is green |
-| M14 | **Hardening & deploy** | Bucket4j rate limiting, caching, self-hosted Supabase + API on a RU cloud VM, TLS, backups | Production is live |
+| M11 | **Chat** | A chat per course, made with the course, for its students and the school's staff; messages with replies, attachments, votes and read marks; banners (announce, info, warning, danger) from the staff, pinned above the feed; server-sent events | A student's message reaches a curator's open stream, and a curator's pinned banner shows for the student |
+| M12 | **Admin** | `/admin/**` for users, schools, storage prices, payments and balance adjustments; SQL-view reports | Admin can manage everything above |
+| M13 | **Monitoring** | Actuator, Micrometer, OpenTelemetry → Grafana LGTM, JSON logs, Telegram error appender, admin insights | Traces and metrics visible in Grafana |
+| M14 | **Tests & CI** | Testcontainers, WireMock, Modulith scenario tests, ArchUnit rules, GitHub Actions, image build | CI is green |
+| M15 | **Hardening & deploy** | Bucket4j rate limiting, caching, self-hosted Supabase + API on a RU cloud VM, TLS, backups | Production is live |
 
 **Optional later:** Kafka (Modulith `@Externalized`), Kubernetes/Helm, Spring AI with YandexGPT/GigaChat for homework pre-review, a Telegram bot for students.
 
@@ -100,7 +102,7 @@ M1 to M10 are done and live in `services/platform` (M1's foundation is now `libs
 
 ## Risks & prerequisites
 - Self-hosted Supabase means running upgrades and backups ourselves. The fallback is Yandex Managed PostgreSQL + Yandex Object Storage: auth is ours, so nothing else depends on Supabase.
-- Owning auth means owning its security: token signing secret, refresh rotation, OTP brute-force limits. IP rate limiting arrives only in M14.
+- Owning auth means owning its security: token signing secret, refresh rotation, OTP brute-force limits. IP rate limiting arrives only in M15.
 - Apple Sign In only redirects to registered HTTPS URLs, so testing it locally needs a tunnel (`cloudflared`).
 - Nested entity classes: M1 confirms early that Hibernate entity naming and the Criteria setup work with them.
 - Local setup needs only a recent Docker: `compose.dev.yaml` runs Postgres (the Supabase image), Supabase Storage and Mailpit.
