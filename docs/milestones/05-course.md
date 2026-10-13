@@ -17,7 +17,8 @@
 | Students reading lessons; progress; homework and quiz blocks | Not done: M8 |
 | Prices and offers | Not done: M7 |
 | Plan limits, storage quota | Not done: M10. Until then 100 sections and 500 lessons per course |
-| Video transcoding, adaptive streaming, protection; links to video hosts | Not done |
+| Videos on Rutube, VK Video and YouTube, by a link or the host's embed code (an `embed` block) | Done, after the milestone |
+| Video transcoding, adaptive streaming, protection | Not done |
 | Categories, tags, reviews; notifying anyone about a publication | Not done |
 
 ## Decisions
@@ -28,6 +29,7 @@
 - **Text is Markdown, never HTML**, so the server has nothing to sanitise.
 - **Video is our own upload**, a plain file played through a signed link (6 hours). Nothing is transcoded, and nothing protects a video beyond the link's lifetime.
 - **A big file is uploaded with the tus protocol**, to Supabase Storage's endpoint for signed uploads (`/upload/resumable/sign`), with the same signed token as a plain upload in the `x-signature` header of every request. The plain `/upload/resumable` endpoint wants a user's JWT, which our clients don't have.
+- **A video on an outside host is a link we read, never HTML we keep.** The author pastes a link or the host's embed code; `VideoLink` accepts only the forms Rutube, VK Video and YouTube use, and the player's address is built from the id and key it checked. The embed code is accepted because VK's `hash` for a video that isn't public exists only there.
 - **Video has its own bucket**, so the size limit storage enforces stays tight for every other file. The buckets follow `FilePurpose.Bucket`.
 - **A block names its file by id; links are asked for separately**, signed in one call per bucket. A lesson response never carries links that expire.
 - **An author edits every course of the school.** The role alone decides; there is no per-course author list.

@@ -5,6 +5,7 @@
  */
 package vkurse.platform.course.domain;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import vkurse.core.error.Errors.BadRequestException;
 @JsonSubTypes({
     @JsonSubTypes.Type(value = LessonBlock.Text.class, name = "text"),
     @JsonSubTypes.Type(value = LessonBlock.Video.class, name = "video"),
+    @JsonSubTypes.Type(value = LessonBlock.Embed.class, name = "embed"),
     @JsonSubTypes.Type(value = LessonBlock.Image.class, name = "image"),
     @JsonSubTypes.Type(value = LessonBlock.File.class, name = "file"),
     @JsonSubTypes.Type(value = LessonBlock.Homework.class, name = "homework"),
@@ -59,6 +61,39 @@ public sealed interface LessonBlock {
         @Override
         public Video withId(UUID id) {
             return new Video(id, fileId);
+        }
+    }
+
+    /**
+     * A video on an outside host, shown in that host's player. An author sends only {@code url}: a link to the video,
+     * or the host's code to embed it. The rest is read from it (see {@link VideoLink}); {@code url} is kept as the
+     * link, never as code.
+     */
+    record Embed(
+            @Nullable UUID id,
+            String url,
+            VideoLink.@Nullable Provider provider,
+            @Nullable String videoId,
+            @Nullable String key)
+            implements LessonBlock {
+        @Override
+        public Embed withId(UUID id) {
+            return new Embed(id, url, provider, videoId, key);
+        }
+
+        /** The block as an author may save it: with what its link says, whatever came with it. */
+        Embed checked() {
+            var link = VideoLink.parse(url);
+            return new Embed(id, link.url(), link.provider(), link.videoId(), link.key());
+        }
+
+        /**
+         * The address an {@code iframe} shows. It is written with the block and never read back: it is worked out
+         * again each time, so what a client sends as one is ignored.
+         */
+        @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+        public @Nullable String embedUrl() {
+            return provider == null || videoId == null ? null : new VideoLink(provider, videoId, key, url).embedUrl();
         }
     }
 

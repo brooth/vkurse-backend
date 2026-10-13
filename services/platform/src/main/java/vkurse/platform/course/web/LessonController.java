@@ -60,7 +60,8 @@ class LessonController {
 
     /**
      * Replaces the lesson's content with these blocks. A block is {@code { type: "text", text }} (Markdown) or
-     * {@code { type: "video" | "image" | "file", fileId }}, with a file of the school's library. A block sent with its
+     * {@code { type: "video" | "image" | "file", fileId }}, with a file of the school's library, or
+     * {@code { type: "embed", url }}, with a link to a video on Rutube, VK Video or YouTube. A block sent with its
      * {@code id} keeps it; one without gets a new id.
      */
     @PostMapping("/content")

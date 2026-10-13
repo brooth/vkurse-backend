@@ -50,6 +50,7 @@ It depends on [`school`](../school/README.md) (who is on the staff, with which r
 |---|---|
 | `text` | `text`: Markdown, 1 to 50 000 characters. Never HTML |
 | `video` | `fileId`: a video of the school's library |
+| `embed` | `url`: a link to a video on Rutube, VK Video or YouTube, or the host's code to embed it |
 | `image` | `fileId`: an image of the school's library |
 | `file` | `fileId`: any other file of the school's library, to download |
 | `homework` | `task`: Markdown, 1 to 50 000 characters. Students answer it and the staff review the answers |
@@ -62,6 +63,17 @@ It depends on [`school`](../school/README.md) (who is on the staff, with which r
 - **A file a lesson shows can't be deleted from the library**: 409 `course/file-in-use`. Lessons of a deleted course don't count.
 - Links are refused with 402 `billing/suspended` while the school has owed Vkurse for storage for more than 14 days ([billing](../billing/README.md)).
 - A lesson is published on its own, and needs content for it. Only published lessons appear outside the staff.
+- **An `embed` block shows a video in its host's player.** The author sends only `url`; the server reads `provider` (`RUTUBE`, `VK`, `YOUTUBE`), `videoId` and `key` from it and answers with `embedUrl`, the address for an `<iframe>`. What a client sends in those fields is ignored. Anything that isn't one of the forms below is 400 `course/unsupported-video-link` (`VideoLink`).
+
+| Host | Links read | `embedUrl` |
+|---|---|---|
+| Rutube | `rutube.ru/video/{id}/`, `rutube.ru/video/private/{id}/?p={key}`, `rutube.ru/play/embed/{id}/` | `https://rutube.ru/play/embed/{id}/?p={key}` |
+| VK Video | `vkvideo.ru/video{owner}_{id}`, the same on `vk.com`, `vk.ru` and `m.vk.com`, also as `?z=video{owner}_{id}`; `vk.com/video_ext.php?oid=&id=&hash=` | `https://vk.com/video_ext.php?oid={owner}&id={id}&hd=2&hash={hash}` |
+| YouTube | `youtube.com/watch?v={id}`, `youtu.be/{id}`, `/shorts/{id}`, `/live/{id}`, `/embed/{id}` | `https://www.youtube.com/embed/{id}` |
+
+- Of pasted code only the `src` of its `<iframe>` is read, and `url` is saved as that address: **no HTML is stored or returned**. A VK video that isn't open to everyone plays only with its `hash`, which is in the code VK gives to embed it and not in the video's link.
+- **We don't protect an embedded video.** Rutube's `key` and VK's `hash` are in the lesson, so whoever reads the lesson can pass the video on. Nothing checks that the video exists or may be embedded. YouTube is slowed down in Russia.
+- An embedded video is not in storage: it has no link in `…/links`, costs the school nothing, and stays shown while the school is suspended.
 - Blocks name files by id. The links are asked for separately (`…/links`), signed for a short time: a video for 6 hours, anything else for an hour. A video and an image are served to be shown, a file to be saved.
 
 **Who sees a lesson when** (for students it is enforced by the [learning module](../learning/README.md#rules))
@@ -122,6 +134,7 @@ An author edits every course of the school. A course of a school the caller does
 - `CourseResponse`: `id`, `createdAt`, `updatedAt`, `schoolId`, `title`, `slug`, `summary`, `description`, `cover`, `status` (`DRAFT`, `PUBLISHED`), `publishedAt`.
 - `LessonResponse`: `id`, `createdAt`, `updatedAt`, `courseId`, `sectionId`, `title`, `position`, `status`, `preview`, `drip`, `stop`, `blocks`. A lesson summary is the same without the dates, `courseId` and `blocks`.
 - `CatalogCourseResponse`: `id`, `title`, `slug`, `summary`, `cover`, `publishedAt`, `lessons` (how many are published), `school { id, name, slug, logo }`.
+- A block of `blocks` is `{ id, type, … }` with what its [kind](#rules) holds. An `embed` block is `{ id, type: "embed", url, provider, videoId, key, embedUrl }`. Show `embedUrl` in an `<iframe allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen>`; a content security policy needs `frame-src` for `rutube.ru`, `vk.com` and `www.youtube.com`.
 - The cover is uploaded like a school's logo: ask for a link, `PUT` the image, set it. Videos and files are uploaded to the [school's library](../school/README.md).
 
 ## Tables

@@ -70,6 +70,7 @@ public record LessonContent(List<LessonBlock> blocks) {
                     }
                     block = quiz.checked(newId);
                 }
+                case LessonBlock.Embed embed -> block = embed.checked();
                 default -> {
                     if (block.fileId() == null) {
                         throw new BadRequestException("A block needs its file");
@@ -161,6 +162,7 @@ public record LessonContent(List<LessonBlock> blocks) {
                 case LessonBlock.Image image ->
                     !isVideo && file.getContentType().startsWith("image/");
                 case LessonBlock.File other -> !isVideo;
+                case LessonBlock.Embed embed -> true;
                 case LessonBlock.Text text -> true;
                 case LessonBlock.Homework homework -> true;
                 case LessonBlock.Quiz quiz -> true;

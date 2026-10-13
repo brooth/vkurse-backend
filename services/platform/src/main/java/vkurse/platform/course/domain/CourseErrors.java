@@ -47,6 +47,19 @@ public final class CourseErrors {
         }
     }
 
+    /**
+     * 400 {@code course/unsupported-video-link}: what was pasted is not a link to a video on Rutube, VK Video or
+     * YouTube, nor their code to embed one.
+     */
+    public static class UnsupportedVideoLinkException extends ClientException {
+        public UnsupportedVideoLinkException() {
+            super(
+                    HttpStatus.BAD_REQUEST,
+                    "course/unsupported-video-link",
+                    "Paste a link to a video on Rutube, VK Video or YouTube, or the code to embed it");
+        }
+    }
+
     /** 429 {@code course/too-many-sections}: the course has as many sections as one may have. */
     public static class TooManySectionsException extends ClientException {
         public TooManySectionsException() {
