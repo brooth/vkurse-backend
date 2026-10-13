@@ -9,6 +9,8 @@ import java.time.Clock;
 import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -31,6 +33,8 @@ import vkurse.platform.payment.domain.WebhookEventRepository;
  */
 @Component
 class PaymentSync {
+    private static final Logger log = LoggerFactory.getLogger(PaymentSync.class);
+
     private final PaymentRepository payments;
     private final RefundRepository refunds;
     private final MerchantRepository merchants;
@@ -75,17 +79,30 @@ class PaymentSync {
             return;
         }
         var state = ask(known.get().payment(), known.get().merchant());
-        transaction.executeWithoutResult(status -> {
+        var settled = transaction.execute(status -> {
             var payment = payments.findByIdForUpdate(paymentId).orElseThrow();
-            if (payment.isPending()) {
-                state.ifPresent(answer -> payment.apply(answer, clock.instant()));
-                if (received != null && !payment.isPending()) {
-                    inbox.save(received);
-                }
-                payment.checked(clock.instant());
-                payments.save(payment);
+            if (!payment.isPending()) {
+                return null;
             }
+            state.ifPresent(answer -> payment.apply(answer, clock.instant()));
+            if (received != null && !payment.isPending()) {
+                inbox.save(received);
+            }
+            payment.checked(clock.instant());
+            payments.save(payment);
+            return payment.isPending() ? null : payment;
         });
+        if (settled != null) {
+            log.info(
+                    "Payment {} of {} for {} {} became {} ({}, provider payment {})",
+                    paymentId,
+                    settled.getAmount(),
+                    settled.getPurpose(),
+                    settled.getReferenceId(),
+                    settled.getStatus(),
+                    received == null ? "found by a check" : "told by a notification",
+                    settled.getProviderPaymentId());
+        }
     }
 
     /** Asks the provider about a refund and applies the answer. {@code received} is as in {@link #refreshPayment}. */
@@ -97,18 +114,29 @@ class PaymentSync {
             return;
         }
         var state = askRefund(known.get().refund(), known.get().merchant());
-        transaction.executeWithoutResult(status -> {
+        var settled = transaction.execute(status -> {
             var refund = refunds.findById(refundId).orElseThrow();
-            if (refund.isPending() && state.isPresent()) {
-                var payment = payments.findByIdForUpdate(refund.getPaymentId()).orElseThrow();
-                payment.settle(refund, state.get());
-                if (received != null && !refund.isPending()) {
-                    inbox.save(received);
-                }
-                refunds.save(refund);
-                payments.save(payment);
+            if (!refund.isPending() || state.isEmpty()) {
+                return null;
             }
+            var payment = payments.findByIdForUpdate(refund.getPaymentId()).orElseThrow();
+            payment.settle(refund, state.get());
+            if (received != null && !refund.isPending()) {
+                inbox.save(received);
+            }
+            refunds.save(refund);
+            payments.save(payment);
+            return refund.isPending() ? null : refund;
         });
+        if (settled != null) {
+            log.info(
+                    "Refund {} of {} from payment {} became {} ({})",
+                    refundId,
+                    settled.getAmount(),
+                    settled.getPaymentId(),
+                    settled.getStatus(),
+                    received == null ? "found by a check" : "told by a notification");
+        }
     }
 
     /** The provider's word on the payment; empty if there is nothing to ask, or nobody to ask as. */

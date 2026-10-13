@@ -240,6 +240,15 @@ Validation errors keep the same `constraints` map, now as a top-level field next
 | `` `User ${id} created` `` | `log.info("User {} created", id)` (placeholders, not concatenation) |
 | `console.*` | Never |
 | Winston file and Telegram transports | M13 (a Logback appender); prod logs are JSON on stdout |
+| `MonitoringMiddleware`: `POST /url 201 253 - ip @userId` + the request body, level by status, `/status` skipped | `HttpLogFilter` in `libs/core`: the same line, plus the duration, the response body and a request id; `/actuator/**` skipped |
+| `@LogMask()` on a DTO field (cuts a long value) | Every body is cut at `vkurse.logging.max-body-length`; a body that isn't text is only named |
+| Request bodies logged as they are: `password`, `apiKey` and OTP codes end up in the log | `LogMasker`: fields named in `vkurse.logging.masked-fields` are logged as `***` |
+| `level: "debug"` in every environment | DEBUG for `vkurse` in `dev` only; `prod` is INFO |
+| No request id; lines are matched by time | `requestId`, `userId` and `job` in the MDC, on every line |
+| `axios.create(...)` per vendor, logged only when it fails | `HttpClients.builder(name, …)`: every call is logged with its status, duration and bodies |
+| `logger.debug({ message: 'sending notification', shots })` (the whole payload, codes included) | `NotificationService` logs the template, channel, recipient and message id at INFO; the text only at DEBUG on `vkurse.notification.body` |
+| An error message that holds a URL with the bot token in it | `HttpClientLog` logs the root cause only, and masks `/bot<token>/` |
+| Cron: `Found N due`, no line for a failure outside the loop | A job logs what it did; `JobLog` logs a job that threw, with its name and duration |
 
 ## 9. Async work, events and scheduling
 

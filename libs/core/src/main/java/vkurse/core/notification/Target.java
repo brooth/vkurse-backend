@@ -18,6 +18,9 @@ public sealed interface Target {
 
     Channel channel();
 
+    /** The recipient's address in the channel, for the log. */
+    String recipient();
+
     static Target email(String address) {
         return new EmailTarget(address);
     }
@@ -38,6 +41,11 @@ public sealed interface Target {
         public Channel channel() {
             return Channel.EMAIL;
         }
+
+        @Override
+        public String recipient() {
+            return address;
+        }
     }
 
     /** @param chatId the Telegram chat the bot writes to: a user who started the bot, or a group it was added to */
@@ -51,6 +59,11 @@ public sealed interface Target {
         @Override
         public Channel channel() {
             return Channel.TELEGRAM;
+        }
+
+        @Override
+        public String recipient() {
+            return chatId;
         }
     }
 }

@@ -40,6 +40,7 @@ Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{descript
 | `DATABASE_URL` / `DATABASE_USER` / `DATABASE_PASSWORD` | no (local defaults) | JDBC connection. It must be a direct connection to Postgres, not a pooler in transaction mode: the chat module listens for `NOTIFY` on it |
 | `SPRING_PROFILES_ACTIVE` | no (`dev`) | `prod` in production (JSON logs) |
 | `PORT` | no (`8080`) | HTTP port |
+| `VKURSE_LOG_SQL` | no (`info`) | `debug` logs every SQL statement. More switches are in [Logs](#logs) |
 | `VKURSE_STORAGE_URL` | yes | Base URL of the Supabase Storage API as this service reaches it. Locally `http://127.0.0.1:54321`; behind the Supabase gateway it ends with `/storage/v1` |
 | `VKURSE_STORAGE_PUBLIC_URL` | yes | The same API as a browser reaches it: upload, download and public links start with it |
 | `VKURSE_STORAGE_SERVICE_KEY` | yes | Supabase service role key. `.env.example` has the published local demo key |
@@ -59,6 +60,19 @@ Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{descript
 Storage must be running when the service starts: it creates its buckets then (see the [storage module](src/main/java/vkurse/platform/storage/README.md#supabase-storage)).
 
 Generate a local signing key: `openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 | awk '{printf "%s\\n", $0}'`.
+
+## Logs
+
+What is logged, and how a line is tied to its request or job, is described in [`libs/core`](../../libs/core/README.md#logging). In `dev` the console has `vkurse` at DEBUG, no SQL, and short colored lines (`18:22:55.405  INFO [HttpLogFilter] [<request id>] POST /auth/otp 200 …`, the pattern is in `application-dev.yaml`); in `prod` it is JSON with `requestId`, `userId` and `job` as fields.
+
+| To see | Set |
+|---|---|
+| SQL | `VKURSE_LOG_SQL=debug` |
+| Every run of every job | `LOGGING_LEVEL_VKURSE_JOB=debug` |
+| HTTP lines without bodies | `LOGGING_LEVEL_VKURSE_HTTP_BODY=off` |
+| The text of sent messages in `prod` (it holds sign-in codes) | `LOGGING_LEVEL_VKURSE_NOTIFICATION_BODY=debug` |
+
+Locally an email goes to Mailpit, not to a real inbox: the `Sent … via 127.0.0.1:54325` line says so, and the email is at `http://127.0.0.1:54324`.
 
 ## Guidelines
 - Keep this file and the module READMEs up to date in every change.

@@ -18,12 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
+import vkurse.core.logging.HttpClients;
 import vkurse.core.money.Money;
 import vkurse.platform.payment.PaymentProperties;
 import vkurse.platform.payment.domain.MerchantAccount;
@@ -57,14 +57,11 @@ class YookassaPaymentGateway implements PaymentGateway {
     private final RestClient client;
     private final JsonMapper json;
 
-    YookassaPaymentGateway(PaymentProperties properties, JsonMapper json) {
-        var requests = new SimpleClientHttpRequestFactory();
-        requests.setConnectTimeout(CONNECT_TIMEOUT);
-        requests.setReadTimeout(READ_TIMEOUT);
+    YookassaPaymentGateway(PaymentProperties properties, HttpClients httpClients, JsonMapper json) {
         var base = properties.yookassa().url().toString();
-        this.client = RestClient.builder()
+        this.client = httpClients
+                .builder("yookassa", CONNECT_TIMEOUT, READ_TIMEOUT)
                 .baseUrl(base.endsWith("/") ? base.substring(0, base.length() - 1) : base)
-                .requestFactory(requests)
                 .build();
         this.json = json;
     }

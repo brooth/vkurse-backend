@@ -12,8 +12,9 @@
 | `web` | `Paging`: `$limit`, `$skip`, `$search` of list endpoints |
 | `money` | `Money` (`BigDecimal` + currency, scale 2) |
 | `notification` | `NotificationService`: email and Telegram, sent at once or stored and retried |
+| `logging` | `HttpLogFilter` (every request served), `HttpClients` (every outside HTTP call), `JobLog` (every scheduled job), `LogMasker` (secrets out of the log) |
 
-Beans a service gets: `ErrorHandler`, `Clock`, `LockProvider` + `LockService`, `@SchedulerLock` support, `NotificationService`. It must set `vkurse.node-id` and `vkurse.database.schema` (`CoreProperties`), and its schema needs the `shedlock` table. Notifications need more: see [below](#notifications).
+Beans a service gets: `ErrorHandler`, `Clock`, `LockProvider` + `LockService`, `@SchedulerLock` support, `NotificationService`, and the [logging](#logging) beans. It must set `vkurse.node-id` and `vkurse.database.schema` (`CoreProperties`), and its schema needs the `shedlock` table. Notifications need more: see [below](#notifications).
 
 ## Aggregates
 
@@ -83,6 +84,48 @@ What a service needs:
 - `@EnableScheduling`, for the delivery job (every 10 seconds) and the cleanup job (daily; rows are kept 30 days).
 
 A Telegram target is a chat id: a user who started our bot, or a group it was added to.
+
+## Logging
+
+A service logs these without writing a line for them:
+
+| What | The line | Level |
+|---|---|---|
+| A request it serves (`HttpLogFilter`) | `POST /auth/otp 200 41ms - 127.0.0.1 @anonymous request={…} response={…}` | INFO; WARN for a 4xx; ERROR for a 5xx |
+| An HTTP call it makes (`HttpClients`) | `yookassa POST https://api.yookassa.ru/v3/payments 200 312ms request={…} response={…}` | INFO; WARN for a 5xx or no answer |
+| A notification (`NotificationService`) | `Sent otp-code by EMAIL to a@b.ru via 127.0.0.1:54325, subject "…", message id <…>`; submitted, delivered, failed with `attempt 2/5` and the next attempt's time | INFO; WARN for a failure; ERROR when it gives up |
+| A scheduled job that threw (`JobLog`) | `Job StorageChargeJob.chargeToday failed after 812ms` and the stack trace | ERROR |
+
+`/actuator/**` and CORS preflights are not logged. A stream (server-sent events) is logged when it opens, marked `(stream)`.
+
+**What a line belongs to** is in the MDC, printed in brackets in the console and as fields in production's JSON:
+
+| Key | Set | Value |
+|---|---|---|
+| `requestId` | For a request, and for the event listeners it starts on other threads | The caller's `X-Request-Id` header, else 12 random hex characters. It is sent back in `X-Request-Id` |
+| `userId` | Once the caller is authenticated | The caller's id |
+| `job` | While a `@Scheduled` method runs | `StorageChargeJob.chargeToday` |
+
+A service's `application.yaml` prints them with `logging.pattern.correlation` (see platform's).
+
+**Secrets** never reach the log: `LogMasker` replaces the value of a field in `vkurse.logging.masked-fields` (`password`, `token`, `accessToken`, `secretKey`, …) with `***`, in JSON bodies, form bodies and query strings, and the Telegram bot token in a URL. `code` is masked only in what is sent (a request body, a query string), because in a response it is an error code. Headers are never logged. A body longer than `vkurse.logging.max-body-length` (2000) characters is cut; a body that isn't text is only named (`<image/png, 48211 bytes>`). When a new request or response field holds a secret under a new name, add the name to `LogProperties`.
+
+With `vkurse.logging.pretty-bodies: true` (platform's `dev` profile) a JSON body is logged indented, on lines of its own. Leave it off in production, where one event is one line.
+
+**An outside HTTP API** is called with a client built by `HttpClients`, never a bare `RestClient.builder()`, so that it has timeouts and is logged:
+
+```java
+this.client = httpClients.builder("yookassa", CONNECT_TIMEOUT, READ_TIMEOUT).baseUrl(url).build();
+```
+
+Loggers that switch a part on and off (`LOGGING_LEVEL_VKURSE_JOB=debug` as an environment variable; that form works for lowercase names only, so platform has `VKURSE_LOG_SQL` for the last one):
+
+| Logger | What | Default |
+|---|---|---|
+| `vkurse.http.body` | Request and response bodies in the two HTTP lines | INFO (on); `off` leaves the lines without bodies |
+| `vkurse.notification.body` | The text of each sent message, at DEBUG | On in `dev`, off in `prod`: an OTP email holds the code |
+| `vkurse.job` | `Job … finished in 12ms` for every run, at DEBUG | Off (INFO). A job says what it did itself |
+| `org.hibernate.SQL` | SQL statements, at DEBUG | Off |
 
 ## Verifying tokens in a service other than platform
 

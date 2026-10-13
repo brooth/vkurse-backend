@@ -9,6 +9,7 @@ import jakarta.mail.MessagingException;
 import java.nio.charset.StandardCharsets;
 import org.springframework.mail.MailPreparationException;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import vkurse.core.notification.Target.EmailTarget;
 
@@ -20,6 +21,11 @@ class SmtpEmailSender {
     SmtpEmailSender(JavaMailSender mail, NotificationProperties properties) {
         this.mail = mail;
         this.properties = properties;
+    }
+
+    /** The mail server emails go through, for the log: {@code 127.0.0.1:54325}. */
+    String server() {
+        return mail instanceof JavaMailSenderImpl smtp ? smtp.getHost() + ":" + smtp.getPort() : "the mail server";
     }
 
     /** Returns the email's {@code Message-ID}. Throws if the mail server did not take it. */

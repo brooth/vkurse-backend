@@ -67,6 +67,12 @@ public record Money(
         return value.signum() == 0;
     }
 
+    /** For logs and error messages: {@code 1500.00 RUB}. */
+    @Override
+    public String toString() {
+        return value.toPlainString() + " " + currency;
+    }
+
     private void requireSameCurrency(Money other) {
         if (currency != other.currency) {
             throw new IllegalArgumentException("Currency mismatch: " + currency + " and " + other.currency);

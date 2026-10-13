@@ -7,22 +7,30 @@ package vkurse.platform.auth.infrastructure.security;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.FormHttpMessageConverter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.endpoint.RestClientAuthorizationCodeTokenResponseClient;
+import org.springframework.security.oauth2.client.http.OAuth2ErrorResponseErrorHandler;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizedClientRepository;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.oauth2.core.endpoint.PkceParameterNames;
+import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.util.LinkedMultiValueMap;
+import vkurse.core.logging.HttpClients;
 
 /**
  * Google and Apple sign-in on Spring Security's OAuth2 client. The registrations live in {@code application.yaml}
@@ -37,6 +45,16 @@ class OAuthConfig {
     static final String CALLBACK_URI = BASE_URI + "/*/callback";
 
     static final String APPLE = "apple";
+
+    private static final Logger log = LoggerFactory.getLogger(OAuthConfig.class);
+
+    private static final String GOOGLE = "google";
+
+    // What .env.example sets where no real OAuth client is needed.
+    private static final String PLACEHOLDER = "placeholder";
+
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration READ_TIMEOUT = Duration.ofSeconds(10);
 
     /**
      * We don't call provider APIs after sign-in, so provider tokens are not kept. Spring's default repository would
@@ -90,8 +108,22 @@ class OAuthConfig {
     /** Exchanges the authorization code for tokens, adding Apple's generated client secret. */
     @Bean
     OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> oauthTokenResponseClient(
-            AppleClientSecret appleClientSecret) {
+            AppleClientSecret appleClientSecret, HttpClients httpClients, ClientRegistrationRepository registrations) {
+        for (var provider : List.of(GOOGLE, APPLE)) {
+            var registration = registrations.findByRegistrationId(provider);
+            if (registration != null && PLACEHOLDER.equals(registration.getClientId())) {
+                log.warn("The {} OAuth client id is a placeholder, sign-in with {} will fail", provider, provider);
+            }
+        }
         var client = new RestClientAuthorizationCodeTokenResponseClient();
+        // Spring Security's own client, with its converters and error handler, plus timeouts and the log.
+        client.setRestClient(httpClients
+                .builder("oauth", CONNECT_TIMEOUT, READ_TIMEOUT)
+                .configureMessageConverters(converters -> converters
+                        .addCustomConverter(new FormHttpMessageConverter())
+                        .addCustomConverter(new OAuth2AccessTokenResponseHttpMessageConverter()))
+                .defaultStatusHandler(new OAuth2ErrorResponseErrorHandler())
+                .build());
         // Parameters returned here replace the default ones with the same name.
         client.setParametersConverter(request -> {
             var parameters = new LinkedMultiValueMap<String, String>();

@@ -13,6 +13,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -48,6 +50,8 @@ import vkurse.platform.user.domain.User;
  */
 @Service
 public class PaymentService {
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+
     private static final Locale RUSSIAN = Locale.forLanguageTag(User.DEFAULT_LOCALE);
 
     private final PaymentRepository payments;
@@ -208,14 +212,28 @@ public class PaymentService {
         }));
         try {
             var state = gateways.of(asked.merchant().getProvider()).refund(asked.credentials(), asked.order());
-            return Objects.requireNonNull(transaction.execute(status -> {
+            var settled = Objects.requireNonNull(transaction.execute(status -> {
                 var payment = payments.findByIdForUpdate(paymentId).orElseThrow();
                 var refund = refunds.findById(asked.refundId()).orElseThrow();
                 payment.settle(refund, state);
                 payments.save(payment);
                 return refunds.save(refund);
             }));
+            log.info(
+                    "User {} refunded {} from payment {}: refund {} is {} (provider refund {})",
+                    userId,
+                    settled.getAmount(),
+                    paymentId,
+                    settled.getId(),
+                    settled.getStatus(),
+                    settled.getProviderRefundId());
+            return settled;
         } catch (RuntimeException e) {
+            log.warn(
+                    "Refund {} from payment {} was not made and is dropped: {}",
+                    asked.refundId(),
+                    paymentId,
+                    e.toString());
             // The provider didn't take the refund: free its amount, so it can be asked for again.
             transaction.executeWithoutResult(status -> {
                 var payment = payments.findByIdForUpdate(paymentId).orElseThrow();
@@ -254,12 +272,28 @@ public class PaymentService {
         }));
         try {
             var created = gateways.of(begun.merchant().getProvider()).create(begun.credentials(), begun.order());
-            return Objects.requireNonNull(transaction.execute(status -> {
+            var accepted = Objects.requireNonNull(transaction.execute(status -> {
                 var payment = payments.findByIdForUpdate(begun.paymentId()).orElseThrow();
                 payment.accept(created, clock.instant());
                 return payments.save(payment);
             }));
+            log.info(
+                    "Created payment {} of {} by user {} to merchant {} for {} {} (provider payment {})",
+                    accepted.getId(),
+                    accepted.getAmount(),
+                    payerId,
+                    merchantId,
+                    accepted.getPurpose(),
+                    accepted.getReferenceId(),
+                    accepted.getProviderPaymentId());
+            return accepted;
         } catch (RuntimeException e) {
+            log.warn(
+                    "Payment {} by user {} to merchant {} was not created and is removed: {}",
+                    begun.paymentId(),
+                    payerId,
+                    merchantId,
+                    e.toString());
             transaction.executeWithoutResult(
                     status -> payments.findById(begun.paymentId()).ifPresent(payments::remove));
             throw e;

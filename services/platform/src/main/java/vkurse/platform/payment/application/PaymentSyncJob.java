@@ -72,5 +72,8 @@ class PaymentSyncJob {
                 log.error("Failed to check refund {}", refundId, e);
             }
         }
+        if (!due.isEmpty() || !pending.isEmpty()) {
+            log.debug("Checked {} pending payments and {} pending refunds", due.size(), pending.size());
+        }
     }
 }

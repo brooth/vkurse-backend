@@ -7,6 +7,7 @@ package vkurse.core.notification;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A notification to deliver: one or more attempts, tried in order until one is delivered. An attempt is a content and
@@ -35,6 +36,16 @@ public record Message(List<Attempt> attempts) {
         var extended = new ArrayList<>(attempts);
         extended.add(new Attempt(content, List.of(targets)));
         return new Message(extended);
+    }
+
+    /** For the log: {@code welcome to EMAIL a@b.ru, else text to TELEGRAM 123}. Never the content itself. */
+    public String describe() {
+        return attempts.stream()
+                .map(attempt -> attempt.content().describe() + " to "
+                        + attempt.targets().stream()
+                                .map(target -> target.channel() + " " + target.recipient())
+                                .collect(Collectors.joining(", ")))
+                .collect(Collectors.joining(", else "));
     }
 
     /** One content and the targets to try it on, in order. */

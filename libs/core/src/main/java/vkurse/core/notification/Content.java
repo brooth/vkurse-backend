@@ -18,6 +18,9 @@ import java.util.regex.Pattern;
 })
 public sealed interface Content {
 
+    /** What the log calls this content: the template's name, or {@code text}. */
+    String describe();
+
     static Content text(String title, String body) {
         return new Text(title, body);
     }
@@ -38,6 +41,11 @@ public sealed interface Content {
                 throw new IllegalArgumentException("A text notification needs a body");
             }
         }
+
+        @Override
+        public String describe() {
+            return "text";
+        }
     }
 
     /**
@@ -56,6 +64,11 @@ public sealed interface Content {
                 throw new IllegalArgumentException("Invalid notification template name " + name);
             }
             params = Map.copyOf(params);
+        }
+
+        @Override
+        public String describe() {
+            return name;
         }
     }
 }

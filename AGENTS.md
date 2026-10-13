@@ -27,6 +27,12 @@ Log errors with a plain message (no trailing colon) and the exception **last**, 
 log.error("Failed to renew subscription {}", subscriptionId, e);   // ✅
 log.error("Failed to renew subscription: " + e.getMessage());       // ❌ loses the stack trace
 ```
+Requests, outside HTTP calls, notifications and failed jobs are logged by `libs/core` ([how](libs/core/README.md#logging)); don't log them again. What you write yourself:
+- **Log every outcome someone will ask about later**, at INFO, after it is saved: a payment created or settled, money moved, an order paid, a webhook received and why it was ignored. A job logs what it did, and nothing when it did nothing.
+- **A line is a past-tense sentence with the ids in it**: `Topped up account {} of school {} by {} from payment {}, the balance is {}`. A money line names the amount, who caused it and the balance after it. A retry line names the attempt (`attempt 2/5`) and when the next one is.
+- **Levels:** ERROR for what someone must look at (with the exception), WARN for a failure we recovered from or a client's mistake, INFO for outcomes, DEBUG for what only helps while developing.
+- **Never log a secret**: a code, a token, a password, a key, a credential. Log ids and amounts. A new secret field in a request or response goes into `vkurse.logging.masked-fields` (`LogProperties`).
+- **Build every client of an outside HTTP API with `HttpClients.builder(name, …)`** from `libs/core`, never a bare `RestClient.builder()`: it sets the timeouts and logs each call.
 
 ### 3. Injection
 - **Constructor injection** with `final` fields. No `@Autowired` fields in services or controllers.

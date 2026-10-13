@@ -57,6 +57,13 @@ class OrderPaymentListener {
         if (order.markPaid(clock.instant())) {
             orders.save(order);
             fulfilment.fulfil(order);
+            log.info(
+                    "Order {} of buyer {} for course {} is paid: {} by payment {}",
+                    order.getId(),
+                    order.getBuyerId(),
+                    order.getCourseId(),
+                    order.getTotalAmount(),
+                    event.paymentId());
         }
     }
 
@@ -68,6 +75,12 @@ class OrderPaymentListener {
         orders.findByIdForUpdate(event.referenceId()).ifPresent(order -> {
             if (order.markRefunded()) {
                 orders.save(order);
+                log.info(
+                        "Order {} of buyer {} is refunded (refund {} of payment {})",
+                        order.getId(),
+                        order.getBuyerId(),
+                        event.refundId(),
+                        event.paymentId());
             }
         });
     }

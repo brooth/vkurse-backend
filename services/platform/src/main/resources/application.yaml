@@ -95,6 +95,17 @@ spring:
 server:
   port: ${PORT:8080}
 
+logging:
+  pattern:
+    # What a line belongs to: "[4f1c9a02b7de @<user id>] " in a request, "[StorageChargeJob.chargeToday] " in a job.
+    correlation: "%replace([%X{requestId}%X{job}%replace( @%X{userId}){' @$',''}] ){'^\\[\\] $',''}"
+  level:
+    # A job's "finished in 12ms" line. A job says what it did itself.
+    vkurse.job: info
+    # SQL statements: VKURSE_LOG_SQL=debug. Not LOGGING_LEVEL_ORG_HIBERNATE_SQL: an environment variable can't spell
+    # the capital letters of this logger's name.
+    org.hibernate.SQL: ${VKURSE_LOG_SQL:info}
+
 management:
   endpoints:
     web:

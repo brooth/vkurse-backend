@@ -1,4 +1,18 @@
+spring:
+  output:
+    ansi:
+      # Colors even where the console isn't detected as one (Gradle's bootRun, an IDE's run panel).
+      enabled: always
+
+vkurse:
+  logging:
+    # JSON bodies indented, on lines of their own.
+    pretty-bodies: true
+
 logging:
+  pattern:
+    # Short lines for reading by eye: time, level, [class], what the line belongs to, message.
+    #   18:22:55.405  INFO [HttpLogFilter] [320bba3d44d5] POST /auth/otp 200 309ms - 127.0.0.1 @anonymous …
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr([%logger{0}]){yellow} ${LOG_CORRELATION_PATTERN:-}%m%n%wEx"
   level:
     vkurse: debug
-    org.hibernate.SQL: debug

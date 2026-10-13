@@ -35,8 +35,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "54321:5000"
     environment:
       ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
       SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
@@ -55,6 +53,20 @@ services:
     volumes:
       - storage-files:/var/lib/storage
 
+  # What a browser and the services reach Storage through. Storage itself answers no CORS preflight (in Supabase the
+  # gateway does), so without this an upload from the web app fails with 404 on OPTIONS.
+  storage-gateway:
+    container_name: vkurse-storage-gateway
+    image: nginx:1.29-alpine
+    restart: unless-stopped
+    depends_on:
+      - storage
+    ports:
+      - "54321:80"
+    configs:
+      - source: storage-gateway
+        target: /etc/nginx/conf.d/default.conf
+
   # Catches every email the services send. UI and API on 54324, SMTP on 54325. Emails are gone after a restart.
   mailpit:
     container_name: vkurse-mailpit
@@ -65,6 +77,36 @@ services:
       - "54325:1025"
 
 configs:
+  storage-gateway:
+    content: |
+      server {
+        listen 80;
+        # Uploads go straight through, whatever their size (a video is up to 2 GB, in pieces).
+        client_max_body_size 0;
+        proxy_request_buffering off;
+        proxy_buffering off;
+
+        location / {
+          if ($$request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin "*";
+            add_header Access-Control-Allow-Methods "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS";
+            add_header Access-Control-Allow-Headers $$http_access_control_request_headers;
+            add_header Access-Control-Max-Age 3600;
+            return 204;
+          }
+          proxy_pass http://storage:5000;
+          proxy_http_version 1.1;
+          # Storage builds the links of a resumable upload from these.
+          proxy_set_header Host $$http_host;
+          proxy_set_header X-Forwarded-Host $$http_host;
+          proxy_set_header X-Forwarded-Proto $$scheme;
+          proxy_hide_header Access-Control-Allow-Origin;
+          proxy_hide_header Access-Control-Expose-Headers;
+          add_header Access-Control-Allow-Origin "*" always;
+          # What a resumable (tus) upload reads from the answers.
+          add_header Access-Control-Expose-Headers "Location, Upload-Offset, Upload-Length, Upload-Expires, Tus-Resumable, Tus-Version, Tus-Extension, Tus-Max-Size" always;
+        }
+      }
   db-roles:
     content: |
       ALTER USER supabase_storage_admin WITH PASSWORD 'postgres';

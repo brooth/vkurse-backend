@@ -80,6 +80,7 @@ There is no SVG or HTML: a browser would run the scripts in them.
 - Three buckets, created or updated at startup: `vkurse.storage.public-bucket` (public), `private-bucket` and `video-bucket`. Each gets the largest size and all content types of the purposes it holds, so storage itself refuses an upload that breaks them. **If storage can't be reached at startup, the service does not start.**
 - A bucket must not be named after a word in the API's paths (`public`, `sign`, `info`, `upload`, `authenticated`): storage then misreads the path.
 - The service uses the service role key, which can do anything in storage. No client ever gets it.
+- **A browser uploads straight to storage, so storage must answer CORS.** The storage server alone doesn't (a preflight `OPTIONS` gets 404): in Supabase the gateway in front of it does. Locally that is `storage-gateway` in `compose.dev.yaml` (nginx on port 54321); a self-hosted production needs the same in its proxy.
 - The storage server signs the upload links and sets how long they work. Set its `UPLOAD_SIGNED_URL_EXPIRATION_TIME` to 7200 seconds, to match `StoredFile.UPLOAD_TTL` (self-hosted storage defaults to 60 seconds).
 - Storage answers every error with HTTP 400 and puts what happened in the body's `code` (`NoSuchKey`, `BucketAlreadyExists`).
 - A plain upload takes at most 50 MB here. Video goes through the resumable endpoint for signed uploads, `/upload/resumable/sign`; the plain `/upload/resumable` wants a user's JWT.

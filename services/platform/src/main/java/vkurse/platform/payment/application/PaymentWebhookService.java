@@ -67,7 +67,18 @@ public class PaymentWebhookService {
      */
     public void handle(PaymentProvider provider, UUID merchantId, String body) {
         var notification = gateways.of(provider).parse(body).orElse(null);
-        if (notification == null || notification.kind() == ProviderNotification.Kind.OTHER) {
+        if (notification == null) {
+            // The body is in the request's own log line.
+            log.warn("Can't read a {} notification for merchant {}", provider, merchantId);
+            return;
+        }
+        log.info(
+                "Received a {} notification {} about {} for merchant {}",
+                provider,
+                notification.event(),
+                notification.objectId(),
+                merchantId);
+        if (notification.kind() == ProviderNotification.Kind.OTHER) {
             return;
         }
         var target = transaction.execute(status -> merchants
@@ -76,7 +87,12 @@ public class PaymentWebhookService {
                 .map(merchant -> new Target(merchant, ours(merchant, notification)))
                 .orElse(null));
         if (target == null || target.objectId() == null) {
-            log.info("Ignored a {} notification {} for merchant {}", provider, notification.event(), merchantId);
+            log.info(
+                    "Ignored a {} notification {} for merchant {}: {}",
+                    provider,
+                    notification.event(),
+                    merchantId,
+                    target == null ? "no such connected merchant" : "it names nothing of ours");
             return;
         }
         var received = WebhookEvent.received(target.merchant(), notification, clock.instant());

@@ -8,6 +8,8 @@ package vkurse.platform.billing.application;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import vkurse.platform.billing.domain.BillingAccount;
 import vkurse.platform.billing.domain.BillingAccountRepository;
@@ -20,6 +22,8 @@ import vkurse.platform.school.application.SchoolService;
 /** Charges one school for one day of storage. Call it inside a transaction of its own. */
 @Component
 class StorageCharger {
+    private static final Logger log = LoggerFactory.getLogger(StorageCharger.class);
+
     private final BillingAccountRepository accounts;
     private final LedgerEntryRepository ledger;
     private final StorageUsageRepository usages;
@@ -62,6 +66,13 @@ class StorageCharger {
         var usage = usages.save(StorageUsage.measure(schoolId, day, bytes, price, now));
         if (usage.isCharged()) {
             ledger.save(account.charge(usage, now));
+            log.info(
+                    "Charged school {} {} for {} bytes of storage on {}, the balance is {}",
+                    schoolId,
+                    usage.getChargeAmount(),
+                    bytes,
+                    day,
+                    account.getBalanceAmount());
         }
         var notice = account.noticeDue(usage.getChargeAmount(), now);
         accounts.save(account);

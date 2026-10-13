@@ -26,7 +26,11 @@ import vkurse.core.notification.Target.TelegramTarget;
  * </ul>
  */
 public class NotificationService {
+    /** The logger the text of a sent message goes to, at DEBUG. Keep it off in production: a text may hold a code. */
+    public static final String BODY_LOGGER = "vkurse.notification.body";
+
     private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
+    private static final Logger bodies = LoggerFactory.getLogger(BODY_LOGGER);
 
     private final NotificationRepository notifications;
     private final TemplateRenderer renderer;
@@ -59,7 +63,7 @@ public class NotificationService {
             try {
                 rendered = renderer.render(attempt.content());
             } catch (RuntimeException e) {
-                log.error("Failed to render a notification", e);
+                log.error("Failed to render notification {}", attempt.content().describe(), e);
                 failure = e;
                 continue;
             }
@@ -69,9 +73,24 @@ public class NotificationService {
                         case EmailTarget to -> email.send(to, rendered);
                         case TelegramTarget to -> telegram.send(to, rendered);
                     };
+                    log.info(
+                            "Sent {} by {} to {}{}, subject \"{}\", message id {}",
+                            attempt.content().describe(),
+                            target.channel(),
+                            target.recipient(),
+                            target instanceof EmailTarget ? " via " + email.server() : "",
+                            rendered.subject(),
+                            messageId);
+                    bodies.debug(
+                            "Text of {} to {}: {}", attempt.content().describe(), target.recipient(), rendered.text());
                     return new Delivery(target.channel(), messageId);
                 } catch (RuntimeException e) {
-                    log.warn("Failed to deliver a notification by {}", target.channel(), e);
+                    log.warn(
+                            "Failed to send {} by {} to {}",
+                            attempt.content().describe(),
+                            target.channel(),
+                            target.recipient(),
+                            e);
                     failure = e;
                 }
             }
@@ -87,6 +106,10 @@ public class NotificationService {
      */
     @Transactional
     public UUID submit(Message message) {
-        return notifications.save(Notification.submit(message, clock.instant())).getId();
+        var id = notifications
+                .save(Notification.submit(message, clock.instant()))
+                .getId();
+        log.info("Submitted notification {}: {}", id, message.describe());
+        return id;
     }
 }

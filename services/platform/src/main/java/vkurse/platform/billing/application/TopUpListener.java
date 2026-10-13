@@ -59,6 +59,14 @@ class TopUpListener {
         }
         ledger.save(account.topUp(payment.getAmount(), payment.getId(), clock.instant()));
         accounts.save(account);
+        log.info(
+                "Topped up account {} of school {} by {} from payment {} of user {}, the balance is {}",
+                account.getId(),
+                account.getSchoolId(),
+                payment.getAmount(),
+                payment.getId(),
+                payment.getPayerId(),
+                account.getBalanceAmount());
     }
 
     @ApplicationModuleListener
@@ -79,5 +87,13 @@ class TopUpListener {
         }
         ledger.save(account.takeBack(event.amount(), event.refundId(), clock.instant()));
         accounts.save(account);
+        log.info(
+                "Took {} back from account {} of school {} for refund {} of payment {}, the balance is {}",
+                event.amount(),
+                account.getId(),
+                account.getSchoolId(),
+                event.refundId(),
+                event.paymentId(),
+                account.getBalanceAmount());
     }
 }

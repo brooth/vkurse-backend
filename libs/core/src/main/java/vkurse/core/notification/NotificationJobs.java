@@ -76,13 +76,28 @@ class NotificationJobs {
                 .ifPresent(notification -> {
                     if (delivered != null) {
                         notification.delivered(delivered, clock.instant());
+                        log.info(
+                                "Notification {} delivered by {} on attempt {}/{}",
+                                notification.getId(),
+                                delivered.channel(),
+                                notification.getAttempts(),
+                                Notification.MAX_ATTEMPTS);
                     } else {
                         notification.failed(failure, clock.instant());
                         if (notification.getStatus() == Notification.Status.FAILED) {
                             log.error(
-                                    "Notification {} gave up after {} attempts",
+                                    "Notification {} gave up after {} attempts, the last error is {}",
                                     notification.getId(),
-                                    notification.getAttempts());
+                                    notification.getAttempts(),
+                                    failure);
+                        } else {
+                            log.warn(
+                                    "Notification {} failed on attempt {}/{}, the next one is at {}, the error is {}",
+                                    notification.getId(),
+                                    notification.getAttempts(),
+                                    Notification.MAX_ATTEMPTS,
+                                    notification.getNextAttemptAt(),
+                                    failure);
                         }
                     }
                     notifications.save(notification);

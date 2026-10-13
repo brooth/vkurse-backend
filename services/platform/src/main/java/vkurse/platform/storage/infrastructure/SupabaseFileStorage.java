@@ -27,10 +27,10 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
+import vkurse.core.logging.HttpClients;
 import vkurse.platform.storage.StorageProperties;
 import vkurse.platform.storage.domain.FilePurpose;
 import vkurse.platform.storage.domain.FileStorage;
@@ -58,13 +58,10 @@ class SupabaseFileStorage implements FileStorage, ApplicationRunner {
     private final StorageProperties properties;
     private final String publicBase;
 
-    SupabaseFileStorage(StorageProperties properties) {
-        var requests = new SimpleClientHttpRequestFactory();
-        requests.setConnectTimeout(CONNECT_TIMEOUT);
-        requests.setReadTimeout(READ_TIMEOUT);
-        this.client = RestClient.builder()
+    SupabaseFileStorage(StorageProperties properties, HttpClients httpClients) {
+        this.client = httpClients
+                .builder("storage", CONNECT_TIMEOUT, READ_TIMEOUT)
                 .baseUrl(withoutTrailingSlash(properties.url()))
-                .requestFactory(requests)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + properties.serviceKey())
                 // The Supabase gateway, where there is one, wants the key in this header too.
                 .defaultHeader("apikey", properties.serviceKey())
