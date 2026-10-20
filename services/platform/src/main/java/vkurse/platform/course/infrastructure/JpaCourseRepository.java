@@ -5,6 +5,7 @@
  */
 package vkurse.platform.course.infrastructure;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -101,6 +102,11 @@ class JpaCourseRepository extends JpaAggregateRepository<Course> implements Cour
     @Override
     public Optional<CourseCard> findPublished(UUID id) {
         return cards(List.of(id)).stream().findFirst();
+    }
+
+    @Override
+    public List<CourseCard> findPublished(Collection<UUID> ids) {
+        return cards(List.copyOf(ids));
     }
 
     /**

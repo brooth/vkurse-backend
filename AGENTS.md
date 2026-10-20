@@ -216,7 +216,7 @@ A value with rules of its own is a record that can't exist in an invalid state: 
 Decide per aggregate what "deleted" means, and name it: `User.delete` keeps the row with `deletedAt`; `Session.revoke` sets `revokedAt`; a used OTP challenge is removed. There is no blanket `deleted_at`. A table with a soft state uses partial unique indexes (`WHERE deleted_at IS NULL`).
 
 ### Events
-- Inside a service, cross-module side effects are events, not calls back into the other module. `@ApplicationModuleListener` for work that may run after commit (stored in `event_publication`, re-delivered on failure); a plain `@EventListener` only when it must be in the same transaction.
+- Inside a service, cross-module side effects are events, not calls back into the other module. `@ApplicationModuleListener` for work that may run after commit (stored in `event_publication`; if it fails, the service's `EventRedeliveryJob` delivers it again after a minute, so **a listener must be safe to run twice**); a plain `@EventListener` only when it must be in the same transaction.
 - Events are records implementing `DomainEvent`, in the publishing module's `domain`, carrying ids, not aggregates.
 
 ### Controllers

@@ -5,6 +5,7 @@
  */
 package vkurse.platform.course.domain;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -37,6 +38,9 @@ public interface CourseRepository {
 
     /** A published course of a live school. */
     Optional<CourseCard> findPublished(UUID id);
+
+    /** Those of the courses that are published, of live schools. */
+    List<CourseCard> findPublished(Collection<UUID> ids);
 
     Course save(Course course);
 }

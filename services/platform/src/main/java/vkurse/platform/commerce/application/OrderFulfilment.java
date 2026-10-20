@@ -51,7 +51,13 @@ class OrderFulfilment {
                                         "courseTitle", order.getCourseTitle(),
                                         "offerName", order.getOfferName(),
                                         "total", order.getTotalAmount().value().toPlainString(),
-                                        "link", properties.webUrl().toString())),
+                                        "link", orderPage(order))),
                         Target.email(buyer.getEmail().value()))));
+    }
+
+    /** The order's page in the web app. */
+    private String orderPage(Order order) {
+        var web = properties.webUrl().toString();
+        return (web.endsWith("/") ? web.substring(0, web.length() - 1) : web) + "/orders/" + order.getId();
     }
 }

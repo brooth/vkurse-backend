@@ -3,7 +3,7 @@
   Unauthorized copying of this file, via any medium is strictly prohibited
   Proprietary and confidential
 */-->
-<!--/* Params: name (the buyer's name), courseTitle, offerName, total (rubles, as text), link (the web app). */-->
+<!--/* Params: name (the buyer's name), courseTitle, offerName, total (rubles, as text), link (the order's page in the web app). */-->
 <p style="margin:0 0 12px;">Здравствуйте, <span th:text="${name}">Имя</span>!</p>
 <p style="margin:0 0 12px;">Оплата получена. Курс «<span th:text="${courseTitle}">Курс</span>» (<span th:text="${offerName}">тариф</span>) теперь ваш.</p>
 <p style="margin:0 0 12px;">Сумма: <span th:text="${total}">0.00</span> ₽</p>

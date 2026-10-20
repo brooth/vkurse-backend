@@ -19,7 +19,7 @@
 | | `CourseCoverService` | `requestUpload`, `change`, `remove` |
 | | `CourseStructureService` | Sections, lessons and their order; `outline` |
 | | `LessonService` | `get`, `update`, `changeContent`, `publish`, `unpublish`, `links` |
-| | `CatalogService` | Public: `search`, `course`, `previewLesson`, `previewLinks` |
+| | `CatalogService` | Public: `search`, `course`, `previewLesson`, `previewLinks`. For other modules: `publishedCourse`, `publishedCourses` |
 | | `CourseReader` | Courses as their students get them, for the modules that show a course to someone who has it |
 | | `CourseAccess` | Who may reach a course: the staff of its school |
 | | `FileInUseListener` | Refuses the deletion of a stored file a lesson shows |

@@ -26,6 +26,8 @@ Source root: `src/main/java/vkurse/platform`. Each direct subpackage is one modu
 
 Root classes: `PlatformApplication` (entry point), `PlatformProperties` (`vkurse.public-url`, `vkurse.web-url`).
 
+Events between modules are stored in `event_publication` with the change that raised them and handled after it is committed. `EventRedeliveryJob` (root class, every minute) hands an event to its listener again when the listener failed or never ran: first after a minute, then after longer pauses, up to half an hour. Spring Modulith doesn't do this by itself, so a listener may get an event twice and must be safe to run twice.
+
 Notifications come from [`libs/core`](../../libs/core/README.md#notifications). This service adds the `notifications` table, the templates in `templates/notification/` (`otp-code`, `welcome`, `school-invitation`, `order-paid`, `course-granted`, `homework-accepted`, `homework-returned`, `billing-low-balance`, `billing-debt`, `billing-suspended`) and their subjects in `messages.properties`.
 
 Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{description}.sql` (schema `platform`), `templates/notification/`, `messages.properties` (Russian, the base bundle).

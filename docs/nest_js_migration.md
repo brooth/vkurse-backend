@@ -263,7 +263,7 @@ Validation errors keep the same `constraints` map, now as a top-level field next
 | `@Cron('0 * * * *')` (5 fields) | `@Scheduled(cron = "0 0 * * * *")` (**6 fields, seconds first**; a 5-field expression fails at startup) + `@SchedulerLock(name = "…")` |
 | `setTimeout` retry loops | Spring's `@Retryable` on the outgoing call |
 
-Events are records implementing `DomainEvent`, in the publishing module's `domain`, raised by the aggregate and published when it is saved. With Spring Modulith they are stored in `event_publication` in the same transaction as the write, delivered **after commit**, and re-delivered if a listener fails. A crash can't lose them, which fire-and-forget emits could.
+Events are records implementing `DomainEvent`, in the publishing module's `domain`, raised by the aggregate and published when it is saved. With Spring Modulith they are stored in `event_publication` in the same transaction as the write, delivered **after commit**, and re-delivered if a listener fails. Spring Modulith doesn't re-deliver by itself: the service's `EventRedeliveryJob` does, a minute after a failure and then after longer pauses, so a listener must be safe to run twice. A crash can't lose them, which fire-and-forget emits could.
 
 ## 10. Configuration, HTTP clients, i18n, templates
 

@@ -189,12 +189,21 @@ public class Offer extends AggregateRoot {
     }
 
     /**
+     * Whether the offer can be bought now.
+     *
+     * @param coursePublished whether the offer's course is in the catalog
+     */
+    public boolean isOnSale(boolean coursePublished) {
+        return active && !isArchived() && coursePublished;
+    }
+
+    /**
      * Checks that the offer can be bought now.
      *
      * @param coursePublished whether the offer's course is in the catalog
      */
     public void ensureSellable(boolean coursePublished) {
-        if (!active || isArchived() || !coursePublished) {
+        if (!isOnSale(coursePublished)) {
             throw new OfferUnavailableException();
         }
     }

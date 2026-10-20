@@ -28,6 +28,7 @@ import vkurse.core.security.GetSession;
 import vkurse.core.security.UserSession;
 import vkurse.platform.commerce.application.OfferService;
 import vkurse.platform.commerce.domain.Offer;
+import vkurse.platform.course.web.CatalogCourseResponse;
 
 /** A course's offers: for the school's owner and admins, and, while on sale, for anyone. */
 @RestController
@@ -65,6 +66,13 @@ class OfferController {
         return offers.findOnSale(courseId).stream().map(OfferResponse::of).toList();
     }
 
+    /** Public: an offer on sale with its course and school, for the page where it is bought. */
+    @GetMapping("/catalog/offers/{id}")
+    CatalogOfferResponse offerOnSale(@PathVariable UUID id) {
+        var found = offers.getOnSale(id);
+        return new CatalogOfferResponse(OfferResponse.of(found.offer()), CatalogCourseResponse.of(found.course()));
+    }
+
     @PatchMapping("/offers/{id}")
     OfferResponse update(
             @GetSession UserSession session, @PathVariable UUID id, @Valid @RequestBody UpdateRequest data) {
@@ -96,6 +104,9 @@ class OfferController {
         offers.archive(session.userId(), id);
         return ResponseEntity.noContent().build();
     }
+
+    /** An offer on sale, with its course as the catalog shows it ({@code course.school} is its school). */
+    record CatalogOfferResponse(OfferResponse offer, CatalogCourseResponse course) {}
 
     /** {@code price} is in rubles, zero for a free offer. Without {@code accessDays}, access has no end. */
     record CreateRequest(

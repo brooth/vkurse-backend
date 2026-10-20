@@ -13,6 +13,7 @@
 | `OrderPaid`, `OrderRefunded` | Done. The learning module listens since M8 |
 | The buyer becomes a student of the school, and gets an email | Done |
 | Public list of a course's offers on sale | Done |
+| For the web app's checkout: an offer on sale by its id with its course and school; the merchants in the quote; the course's current slugs in an order; `paymentStatus` from `pay`; the email's link to the order's page | Done |
 | Access to lessons, "my courses", taking access away after a refund | Done in M8 |
 | Bundles of courses, installments, gifts, invoices for companies, a crossed-out old price | Not done |
 | Sales reports | Not done: M12 |
@@ -25,7 +26,7 @@
 - **An offer sells one course**, and a course has several offers.
 - **An order freezes what was bought**, so a later change of a price or a code never changes what a buyer owes or paid.
 - **A buyer has a course once.** A new order for a course replaces the buyer's unpaid one. Since M8 a paid order whose access days ran out no longer counts, and the unique index that guarded this is gone.
-- **Only `PaymentSucceeded` makes an order paid.** It is handled after the payment's transaction is committed, through the event publication registry, so a crash between the two can't lose it. The order therefore turns `PAID` a moment after the payment.
+- **Only `PaymentSucceeded` makes an order paid.** It is handled after the payment's transaction is committed, through the event publication registry, so a crash between the two can't lose it. A failed or lost handling is repeated by `EventRedeliveryJob` (added with the checkout changes; until then nothing repeated it). The order therefore turns `PAID` a moment after the payment.
 - **Paid money wins**: an expired or canceled order becomes paid when its payment succeeds. The expiry job doesn't ask whether a payment is still pending, because the outcome is right either way.
 - **While an order's payment is pending, paying again returns the same payment**; the provider is asked first, so a payment that was just paid isn't started again. Two `pay` requests at the very same moment can still start two payments.
 - **A promo code's use is counted when the order is placed** and given back if it is never paid. Counting at payment would let more orders than the limit be placed at once.
@@ -48,4 +49,6 @@ Against the environment from `compose.dev.yaml`. The rules were checked with a l
 - **Expiry:** the job expired an order whose time was moved into the past and gave its code's use back; an expired order can't be paid; when its earlier payment then succeeded, the order became `PAID`.
 - **Roles:** an author can't manage offers or codes or see orders (403); an admin can; a buyer sees only their own orders; a non-member and another buyer get 404; no token → 401.
 - **Real YooKassa test shop:** see the last section of [06-payment.md](06-payment.md).
-- Not verified: `OrderPaid` reaching a listener (there is none until M8); a payment that succeeds for a course the buyer already has; two `pay` requests at the same moment; an event that fails and is delivered again; the limits of 20 offers and 200 codes.
+- **Checkout additions:** `GET /catalog/offers/{id}` without a token returns the offer with its course and school, and 404 for an unknown or deactivated offer and for an unpublished course. The quote lists the merchants; none for a free offer and none after the merchant was disabled. Orders carry the slugs (one, the buyer's list, the school's list); after the course's slug was changed, the new one; none while the course is unpublished. Paying again after the earlier payment was paid returns `paymentStatus: SUCCEEDED` with no `confirmationUrl`. The email links to `/orders/{id}`.
+- **An event that fails:** the order's update was made to fail once → the payment was `SUCCEEDED`, the order `PENDING`, the publication `FAILED`; 80 seconds later the job delivered it again → the order `PAID`, one email, one enrollment.
+- Not verified: a payment that succeeds for a course the buyer already has; two `pay` requests at the same moment; the limits of 20 offers and 200 codes.

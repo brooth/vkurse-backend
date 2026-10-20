@@ -17,6 +17,7 @@ import vkurse.platform.commerce.domain.Offer;
 import vkurse.platform.commerce.domain.OfferRepository;
 import vkurse.platform.course.application.CatalogService;
 import vkurse.platform.course.application.CourseService;
+import vkurse.platform.course.domain.CourseCard;
 
 /** A course's offers: managed by the school's owner and admins, and shown to anyone while they are on sale. */
 @Service
@@ -75,6 +76,17 @@ public class OfferService {
         return offers.findActiveByCourse(courseId);
     }
 
+    /** Public: an offer that can be bought now, with its course. One that is off sale is "not found". */
+    @Transactional(readOnly = true)
+    public OnSale getOnSale(UUID offerId) {
+        var offer = offers.findById(offerId).orElseThrow(OfferService::notFound);
+        var course = catalog.publishedCourse(offer.getCourseId());
+        if (!offer.isOnSale(course.isPresent())) {
+            throw notFound();
+        }
+        return new OnSale(offer, course.orElseThrow());
+    }
+
     /**
      * Changes an offer. A {@code null} name, description or price leaves it as it is.
      *
@@ -117,10 +129,16 @@ public class OfferService {
     }
 
     private Offer manageable(UUID userId, UUID offerId) {
-        var offer = offers.findById(offerId)
-                .filter(found -> !found.isArchived())
-                .orElseThrow(() -> new NotFoundException("Offer not found"));
+        var offer =
+                offers.findById(offerId).filter(found -> !found.isArchived()).orElseThrow(OfferService::notFound);
         access.ensureManages(userId, offer.getSchoolId(), "Offer");
         return offer;
     }
+
+    private static NotFoundException notFound() {
+        return new NotFoundException("Offer not found");
+    }
+
+    /** An offer that can be bought now, with its course as the catalog shows it. */
+    public record OnSale(Offer offer, CourseCard course) {}
 }

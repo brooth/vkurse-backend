@@ -8,7 +8,9 @@ package vkurse.platform.commerce.application;
 import java.time.Clock;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.MessageSource;
@@ -80,12 +82,17 @@ public class OrderService {
         this.transaction = new TransactionTemplate(transactionManager);
     }
 
-    /** What an offer costs with a promo code, before ordering. Nothing is stored and no use is counted. */
-    public Quote quote(UUID offerId, @Nullable String promoCode) {
+    /**
+     * What an offer costs with a promo code, before ordering, and the merchants it could be paid with. Nothing is
+     * stored and no use is counted.
+     */
+    public Quoted quote(UUID offerId, @Nullable String promoCode) {
         return Objects.requireNonNull(transaction.execute(status -> {
-            var sold = sellable(offerId);
-            var promo = promoCode == null ? null : promo(sold.offer(), promoCode, false);
-            return promo == null ? Quote.full(sold.offer()) : promo.quote(sold.offer(), clock.instant());
+            var offer = sellable(offerId).offer();
+            var promo = promoCode == null ? null : promo(offer, promoCode, false);
+            var quote = promo == null ? Quote.full(offer) : promo.quote(offer, clock.instant());
+            return new Quoted(
+                    quote, quote.needsPayment() ? merchants.findOffered(offer.getSchoolId()) : List.<Merchant>of());
         }));
     }
 
@@ -153,6 +160,16 @@ public class OrderService {
             staff.require(schoolId, userId).ensureCanManageSales();
             return orders.findBySchool(schoolId, paging.limit(), paging.offset());
         }));
+    }
+
+    /** The order's course as the catalog shows it now; empty while it is not published. */
+    public Optional<CourseCard> courseOf(Order order) {
+        return catalog.publishedCourse(order.getCourseId());
+    }
+
+    /** The courses of those orders that are in the catalog now, by course id. */
+    public Map<UUID, CourseCard> coursesOf(List<Order> found) {
+        return catalog.publishedCourses(found.stream().map(Order::getCourseId).toList());
     }
 
     /** The merchants the buyer may pay an order with. */
@@ -259,6 +276,9 @@ public class OrderService {
     private static NotFoundException notFound() {
         return new NotFoundException("Order not found");
     }
+
+    /** What an offer costs, with the merchants the buyer could pay it with; none when nothing is left to pay. */
+    public record Quoted(Quote quote, List<Merchant> merchants) {}
 
     /** An order that was just placed, with the merchants the buyer may pay it with. */
     public record Placed(Order order, List<Merchant> merchants) {}

@@ -10,12 +10,14 @@ import java.util.List;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import vkurse.platform.commerce.domain.Order;
+import vkurse.platform.course.domain.CourseCard;
 import vkurse.platform.payment.domain.Merchant;
 import vkurse.platform.payment.domain.PaymentProvider;
 
 /**
  * An order. While it is {@code PENDING}, {@code merchants} are the ways to pay it, to choose one for
- * {@code POST /orders/{id}/pay}; {@code paymentId} is the payment last started for it.
+ * {@code POST /orders/{id}/pay}; {@code paymentId} is the payment last started for it. {@code schoolSlug} and
+ * {@code courseSlug} are the address of the course's page as it is now; absent while the course is not in the catalog.
  */
 public record OrderResponse(
         UUID id,
@@ -27,6 +29,8 @@ public record OrderResponse(
         UUID courseId,
         String offerName,
         String courseTitle,
+        @Nullable String schoolSlug,
+        @Nullable String courseSlug,
         @Nullable Integer accessDays,
         PriceResponse price,
         PriceResponse discount,
@@ -38,7 +42,10 @@ public record OrderResponse(
         Instant expiresAt,
         List<MerchantOption> merchants) {
 
-    public static OrderResponse of(Order order, List<Merchant> merchants) {
+    /**
+     * @param course the order's course as the catalog shows it now; {@code null} if it is not there
+     */
+    public static OrderResponse of(Order order, List<Merchant> merchants, @Nullable CourseCard course) {
         return new OrderResponse(
                 order.getId(),
                 order.getCreatedAt(),
@@ -49,6 +56,8 @@ public record OrderResponse(
                 order.getCourseId(),
                 order.getOfferName(),
                 order.getCourseTitle(),
+                course == null ? null : course.school().getSlug().value(),
+                course == null ? null : course.course().getSlug().value(),
                 order.getAccessDays(),
                 PriceResponse.of(order.getPriceAmount()),
                 PriceResponse.of(order.getDiscountAmount()),
@@ -58,12 +67,14 @@ public record OrderResponse(
                 order.getPaymentId(),
                 order.getPaidAt(),
                 order.getExpiresAt(),
-                merchants.stream()
-                        .map(merchant ->
-                                new MerchantOption(merchant.getId(), merchant.getProvider(), merchant.getName()))
-                        .toList());
+                merchants.stream().map(MerchantOption::of).toList());
     }
 
     /** One way to pay: a merchant of the school, as a payer sees it. */
-    public record MerchantOption(UUID id, PaymentProvider provider, String name) {}
+    public record MerchantOption(UUID id, PaymentProvider provider, String name) {
+
+        public static MerchantOption of(Merchant merchant) {
+            return new MerchantOption(merchant.getId(), merchant.getProvider(), merchant.getName());
+        }
+    }
 }

@@ -22,6 +22,11 @@ public record Quote(Money price, Money discount, Money total) {
         return new Quote(price, price.minus(price), price);
     }
 
+    /** Whether anything is left to pay: an order with nothing to pay is paid at once, with no payment. */
+    public boolean needsPayment() {
+        return !total.isZero();
+    }
+
     static Quote discounted(Offer offer, Discount discount) {
         var price = offer.getPriceAmount();
         var taken = discount.of(price);

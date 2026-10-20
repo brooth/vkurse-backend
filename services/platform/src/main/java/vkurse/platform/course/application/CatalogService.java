@@ -5,11 +5,15 @@
  */
 package vkurse.platform.course.application;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -82,6 +86,13 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public Optional<CourseCard> publishedCourse(UUID courseId) {
         return courses.findPublished(courseId);
+    }
+
+    /** Those of the courses that are published, of live schools, by id. For modules that link to a course's page. */
+    @Transactional(readOnly = true)
+    public Map<UUID, CourseCard> publishedCourses(Collection<UUID> courseIds) {
+        return courses.findPublished(Set.copyOf(courseIds)).stream()
+                .collect(Collectors.toMap(card -> card.course().getId(), Function.identity()));
     }
 
     /** A lesson anyone may read: a free preview of a published course. */
