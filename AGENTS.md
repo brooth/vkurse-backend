@@ -285,7 +285,7 @@ The traps that matter most:
 
 ## Running locally
 ```bash
-docker compose -f compose.dev.yaml up -d          # Postgres :54322, Supabase Storage :54321, Mailpit :54324
+docker compose -f compose.dev.yaml up -d          # Postgres :54322, Supabase Storage :54321, Mailpit :54324, Kafka :54392
 cp services/platform/.env.example services/platform/.env  # first time only; fill in VKURSE_AUTH_PRIVATE_KEY
 ./gradlew :services:platform:bootRun                  # http://localhost:8080
 ./gradlew spotlessApply                           # format + headers (run before finishing a task)

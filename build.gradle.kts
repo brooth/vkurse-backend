@@ -8,7 +8,7 @@ plugins {
 
 val palantirJavaFormat = libs.versions.palantir.java.format.get()
 
-// Only projects with a build file (libs/core, services/platform), not the `libs` and `services` folders.
+// Only projects with a build file (libs/core, services/platform, services/monitoring), not the `libs` and `services` folders.
 configure(subprojects.filter { it.buildFile.exists() }) {
     apply(plugin = "java")
     apply(plugin = "com.diffplug.spotless")

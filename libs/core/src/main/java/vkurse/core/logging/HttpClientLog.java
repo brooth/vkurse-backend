@@ -12,6 +12,7 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.ClientHttpResponse;
+import vkurse.core.telemetry.Telemetry;
 
 /**
  * Logs every call a client makes, in one line written when the answer came:
@@ -21,7 +22,7 @@ import org.springframework.http.client.ClientHttpResponse;
  * }</pre>
  *
  * A 5xx answer, and a call that got no answer, is a WARN. Headers are never logged: they hold the credentials.
- * It reads the response, so the client's request factory must buffer it (see {@link HttpClients}).
+ * Each call is also reported to {@link Telemetry}. It reads the response, so the client's request factory must buffer it (see {@link HttpClients}).
  */
 class HttpClientLog implements ClientHttpRequestInterceptor {
     private static final Logger log = LoggerFactory.getLogger(HttpClientLog.class);
@@ -29,10 +30,12 @@ class HttpClientLog implements ClientHttpRequestInterceptor {
 
     private final String name;
     private final LogMasker masker;
+    private final Telemetry telemetry;
 
-    HttpClientLog(String name, LogMasker masker) {
+    HttpClientLog(String name, LogMasker masker, Telemetry telemetry) {
         this.name = name;
         this.masker = masker;
+        this.telemetry = telemetry;
     }
 
     @Override
@@ -59,9 +62,11 @@ class HttpClientLog implements ClientHttpRequestInterceptor {
                     millisSince(startedAt),
                     masker.url(String.valueOf(rootCause(e))),
                     labeled("request=", sent));
+            telemetry.outsideCall(name, request.getMethod().name(), request.getURI(), 0, millisSince(startedAt), e);
             throw e;
         }
         var status = response.getStatusCode().value();
+        telemetry.outsideCall(name, request.getMethod().name(), request.getURI(), status, millisSince(startedAt), null);
         var line = call.append(' ')
                 .append(status)
                 .append(' ')

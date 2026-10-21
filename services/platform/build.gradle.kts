@@ -5,6 +5,11 @@ plugins {
 
 description = "Vkurse platform service: users and authentication"
 
+// Makes `BuildProperties`, the version telemetry reports with every event.
+springBoot {
+    buildInfo()
+}
+
 dependencyManagement {
     imports {
         mavenBom("org.springframework.modulith:spring-modulith-bom:${libs.versions.spring.modulith.get()}")

@@ -4,7 +4,7 @@
 
 | Package | Content |
 |---|---|
-| `domain` | `AggregateRoot` (id, timestamps, version, raised events) and `DomainEvent` |
+| `domain` | `AggregateRoot` (id, timestamps, version, raised events), `DomainEvent` and `UuidV7` (the time-ordered ids of aggregates and telemetry events) |
 | `persistence` | `JpaAggregateRepository` (base of every repository implementation), `LockService` (cluster locks) |
 | `error` | `Errors` (the client and server exceptions) and `ErrorHandler` (RFC 9457 problem bodies with a `code`) |
 | `validation` | `Validation`: constraint codes for error bodies, `@LanguageCode`, `@TimeZone` |
@@ -12,6 +12,7 @@
 | `web` | `Paging`: `$limit`, `$skip`, `$search` of list endpoints |
 | `money` | `Money` (`BigDecimal` + currency, scale 2) |
 | `notification` | `NotificationService`: email and Telegram, sent at once or stored and retried |
+| `telemetry` | `Telemetry` (what a node tells `monitoring`), `KafkaTelemetry`, the events, `LatencyBuckets` |
 | `logging` | `HttpLogFilter` (every request served), `HttpClients` (every outside HTTP call), `JobLog` (every scheduled job), `LogMasker` (secrets out of the log) |
 
 Beans a service gets: `ErrorHandler`, `Clock`, `LockProvider` + `LockService`, `@SchedulerLock` support, `NotificationService`, and the [logging](#logging) beans. It must set `vkurse.node-id` and `vkurse.database.schema` (`CoreProperties`), and its schema needs the `shedlock` table. Notifications need more: see [below](#notifications).
@@ -126,6 +127,35 @@ Loggers that switch a part on and off (`LOGGING_LEVEL_VKURSE_JOB=debug` as an en
 | `vkurse.notification.body` | The text of each sent message, at DEBUG | On in `dev`, off in `prod`: an OTP email holds the code |
 | `vkurse.job` | `Job … finished in 12ms` for every run, at DEBUG | Off (INFO). A job says what it did itself |
 | `org.hibernate.SQL` | SQL statements, at DEBUG | Off |
+
+## Telemetry
+
+Every service tells the `monitoring` service how it performs, with no code of its own: the filter, the outside-call
+interceptor and the job advisor of [Logging](#logging) also call `Telemetry`. Events go to Kafka as JSON, keyed by the
+node's id, and `monitoring` reads them ([M13](../../docs/milestones/13-monitoring.md)).
+
+| Event | Topic | What it is |
+|---|---|---|
+| `HttpWindow` | `telemetry.http` | One minute of one route on this node: counts, errors, total and max time, a histogram (`LatencyBuckets`). Routes are controller templates (`/schools/{schoolId}/courses`); a request no controller answered is `UNMATCHED` |
+| `HttpSample` | `telemetry.http` | One request kept whole: a 5xx, one slower than `slow-millis`, or a `sample-rate` share of the rest |
+| `NodeSample` | `telemetry.node` | CPU, heap, GC, threads, connection pool, uptime, events lost; every `node-interval` |
+| `JobRun`, `OutsideCall` | `telemetry.jobs` | A run of a `@Scheduled` job; a call made through `HttpClients` (host and path, no query, no headers) |
+
+Rules it keeps:
+- **It never slows or fails the service.** A request only adds to a counter and, if kept whole, to a bounded queue; a thread of its own sends batches. A full queue or an unreachable Kafka drops events and counts them (`NodeSample.droppedEvents`, and a WARN line every 5 minutes). Kafka is reached lazily, so the service starts without it.
+- **No secrets or personal data:** no bodies, addresses, tokens or query strings; the user is an id.
+- **The bean is always there.** `vkurse.telemetry.enabled` (default `false`) picks `KafkaTelemetry` or `NoopTelemetry`; callers never read the flag. With it on, `kafka.bootstrap-servers` is required.
+
+| Property (`vkurse.telemetry`) | Default | |
+|---|---|---|
+| `enabled` | `false` | Send to Kafka |
+| `kafka.bootstrap-servers` | none | Required when enabled (`localhost:54392` in `compose.dev.yaml`; MSK in production) |
+| `slow-millis` | `500` | A request this slow is kept whole |
+| `sample-rate` | `0.01` | The share of other requests kept whole |
+| `queue-size` | `10000` | Events waiting to be sent |
+| `node-interval` | `15s` | How often the node reports |
+
+The service's name is `spring.application.name`; its version comes from `BuildProperties` (`springBoot { buildInfo() }` in the service's `build.gradle.kts`, else `unknown`).
 
 ## Verifying tokens in a service other than platform
 

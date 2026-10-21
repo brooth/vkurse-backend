@@ -1,0 +1,92 @@
+spring:
+  application:
+    name: vkurse-monitoring
+  config:
+    # Local development reads a .env file (see .env.example). Real environment variables win.
+    import: optional:file:.env[.properties]
+  profiles:
+    # `dev` unless SPRING_PROFILES_ACTIVE says otherwise (prod sets it to `prod`).
+    default: dev
+  threads:
+    virtual:
+      enabled: true
+  jackson:
+    # Unset (null) fields are left out of responses.
+    default-property-inclusion: non_null
+
+  datasource:
+    # Its own schema in the one local Postgres; in production its own database.
+    url: ${DATABASE_URL:jdbc:postgresql://127.0.0.1:54322/postgres}
+    username: ${DATABASE_USER:postgres}
+    password: ${DATABASE_PASSWORD:postgres}
+    hikari:
+      schema: ${vkurse.database.schema}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      # Flyway owns the schema. Hibernate only checks that entities match it.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: ${vkurse.database.schema}
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    schemas: ${vkurse.database.schema}
+    default-schema: ${vkurse.database.schema}
+    create-schemas: true
+
+  mail:
+    # Local default: Mailpit from compose.dev.yaml (UI at http://127.0.0.1:54324).
+    host: ${MAIL_HOST:127.0.0.1}
+    port: ${MAIL_PORT:54325}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          # Milliseconds. JavaMail waits forever by default.
+          connectiontimeout: 5000
+          timeout: 10000
+          writetimeout: 10000
+
+  messages:
+    # A locale without its own bundle gets messages.properties (Russian), not the server's language.
+    fallback-to-system-locale: false
+
+server:
+  port: ${PORT:8090}
+
+logging:
+  pattern:
+    # What a line belongs to: "[4f1c9a02b7de @<user id>] " in a request, "[NotificationJobs.deliver] " in a job.
+    correlation: "%replace([%X{requestId}%X{job}%replace( @%X{userId}){' @$',''}] ){'^\\[\\] $',''}"
+  level:
+    # A job's "finished in 12ms" line. A job says what it did itself.
+    vkurse.job: info
+    org.hibernate.SQL: ${VKURSE_LOG_SQL:info}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+vkurse:
+  # Required: startup fails if these environment variables are missing.
+  node-id: ${VKURSE_NODE_ID}
+  platform-url: ${VKURSE_PLATFORM_URL}
+  database:
+    schema: monitoring
+  # Like every service it can report its own numbers; off unless Kafka runs.
+  telemetry:
+    enabled: ${VKURSE_TELEMETRY_ENABLED:false}
+    kafka:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:54392}
+  notification:
+    mail-from: ${VKURSE_MAIL_FROM}
+    telegram:
+      # A placeholder works locally: only Telegram messages fail.
+      bot-token: ${TELEGRAM_BOT_TOKEN}

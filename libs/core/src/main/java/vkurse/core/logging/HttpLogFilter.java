@@ -28,7 +28,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.InvalidMediaTypeException;
 import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
+import vkurse.core.telemetry.Telemetry;
 
 /**
  * Logs every request this service answers, in one line written when the answer is ready:
@@ -43,6 +45,8 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
  * <p>It also names the request: {@code requestId} is in the MDC for every line logged while the request is handled,
  * and in the {@value #REQUEST_ID_HEADER} response header. A caller may send its own in that header.
  *
+ * <p>Each request is also counted by {@link Telemetry}, under its route.
+ *
  * <p>It runs before the security filters, so a rejected request is logged too. The response is copied as it is
  * written, never held back, so a stream (the chat's server-sent events) is not delayed; its line is written when the
  * stream opens.
@@ -50,6 +54,7 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 public class HttpLogFilter extends OncePerRequestFilter implements Ordered {
     public static final String REQUEST_ID_HEADER = "X-Request-Id";
     public static final String BODY_LOGGER = "vkurse.http.body";
+    public static final String UNMATCHED = "UNMATCHED";
 
     static final String REQUEST_ID = "requestId";
     static final String USER_ID = "userId";
@@ -64,9 +69,11 @@ public class HttpLogFilter extends OncePerRequestFilter implements Ordered {
     private static final String SILENT_PREFIX = "/actuator";
 
     private final LogMasker masker;
+    private final Telemetry telemetry;
 
-    public HttpLogFilter(LogMasker masker) {
+    public HttpLogFilter(LogMasker masker, Telemetry telemetry) {
         this.masker = masker;
+        this.telemetry = telemetry;
     }
 
     @Override
@@ -143,6 +150,14 @@ public class HttpLogFilter extends OncePerRequestFilter implements Ordered {
                     "response=",
                     masker.body(mediaType(response.getContentType()), response.copied(), response.size(), false));
         }
+        telemetry.request(
+                MDC.get(REQUEST_ID),
+                request.getMethod(),
+                route(request),
+                request.getRequestURI(),
+                status,
+                millis,
+                userId == null ? null : userId.toString());
         if (status >= 500) {
             log.error(line.toString());
         } else if (status >= 400) {
@@ -150,6 +165,16 @@ public class HttpLogFilter extends OncePerRequestFilter implements Ordered {
         } else {
             log.info(line.toString());
         }
+    }
+
+    /**
+     * The controller's path template, so there are as many routes as endpoints. A request no controller answered (the
+     * resource handler's {@code /**}, or a rejection before any handler) is {@value #UNMATCHED}, so a scan can't make
+     * routes up.
+     */
+    private static String route(HttpServletRequest request) {
+        var pattern = request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+        return pattern == null || pattern.toString().equals("/**") ? UNMATCHED : pattern.toString();
     }
 
     private static void append(StringBuilder line, String label, String body) {

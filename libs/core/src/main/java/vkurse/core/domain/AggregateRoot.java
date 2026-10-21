@@ -10,7 +10,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Transient;
 import jakarta.persistence.Version;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,6 @@ import org.jspecify.annotations.Nullable;
  */
 @MappedSuperclass
 public abstract class AggregateRoot {
-    private static final SecureRandom RANDOM = new SecureRandom();
 
     @Id
     private UUID id;
@@ -51,7 +49,7 @@ public abstract class AggregateRoot {
 
     /** A new aggregate, with a time-ordered id that exists before the first save. */
     protected AggregateRoot(Instant now) {
-        this.id = newId(now);
+        this.id = UuidV7.at(now);
         this.createdAt = now;
     }
 
@@ -97,17 +95,5 @@ public abstract class AggregateRoot {
     @Override
     public final int hashCode() {
         return id.hashCode();
-    }
-
-    /** A UUIDv7 (RFC 9562): 48 bits of milliseconds, then random bits, so ids sort by creation time. */
-    private static UUID newId(Instant now) {
-        var random = new byte[10];
-        RANDOM.nextBytes(random);
-        long high = (now.toEpochMilli() << 16) | 0x7000L | ((random[0] & 0x0FL) << 8) | (random[1] & 0xFFL);
-        long low = 0x8000000000000000L | ((random[2] & 0x3FL) << 56);
-        for (int i = 3; i < 10; i++) {
-            low |= (random[i] & 0xFFL) << (8 * (9 - i));
-        }
-        return new UUID(high, low);
     }
 }

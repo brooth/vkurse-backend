@@ -9,9 +9,10 @@ import java.time.Duration;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
+import vkurse.core.telemetry.Telemetry;
 
 /**
- * Where a client of an outside HTTP API starts, so that its calls have timeouts and are logged:
+ * Where a client of an outside HTTP API starts, so that its calls have timeouts, are logged and are reported to telemetry:
  *
  * <pre>{@code
  * this.client = httpClients.builder("yookassa", CONNECT_TIMEOUT, READ_TIMEOUT).baseUrl(url).build();
@@ -21,9 +22,11 @@ import org.springframework.web.client.RestClient;
  */
 public class HttpClients {
     private final LogMasker masker;
+    private final Telemetry telemetry;
 
-    public HttpClients(LogMasker masker) {
+    public HttpClients(LogMasker masker, Telemetry telemetry) {
         this.masker = masker;
+        this.telemetry = telemetry;
     }
 
     /** @param name what the log calls this client: one lowercase word ({@code yookassa}) */
@@ -33,6 +36,6 @@ public class HttpClients {
         requests.setReadTimeout(readTimeout);
         return RestClient.builder()
                 .requestFactory(new BufferingClientHttpRequestFactory(requests))
-                .requestInterceptor(new HttpClientLog(name, masker));
+                .requestInterceptor(new HttpClientLog(name, masker, telemetry));
     }
 }

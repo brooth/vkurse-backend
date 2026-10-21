@@ -21,6 +21,7 @@ spring-boot-starter-webmvc = { module = "org.springframework.boot:spring-boot-st
 spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
 flyway-database-postgresql = { module = "org.flywaydb:flyway-database-postgresql" }
 postgresql = { module = "org.postgresql:postgresql" }
+kafka-clients = { module = "org.apache.kafka:kafka-clients" }
 
 # Versions managed by the Spring Modulith BOM (imported in build.gradle.kts)
 spring-modulith-starter-core = { module = "org.springframework.modulith:spring-modulith-starter-core" }

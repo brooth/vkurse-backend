@@ -1,0 +1,5 @@
+logging:
+  structured:
+    format:
+      # One JSON object per line (Elastic Common Schema), ready for log shippers.
+      console: ecs

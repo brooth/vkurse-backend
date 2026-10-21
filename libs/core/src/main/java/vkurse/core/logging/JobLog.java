@@ -15,8 +15,10 @@ import org.slf4j.MDC;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractPointcutAdvisor;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.Ordered;
 import org.springframework.scheduling.annotation.Scheduled;
+import vkurse.core.telemetry.Telemetry;
 
 /**
  * Wraps every {@code @Scheduled} method. While the job runs, {@code job} ({@code StorageChargeJob.chargeToday}) is in
@@ -32,9 +34,12 @@ public class JobLog extends AbstractPointcutAdvisor {
     private static final Logger log = LoggerFactory.getLogger(LOGGER);
 
     private final Pointcut pointcut = AnnotationMatchingPointcut.forMethodAnnotation(Scheduled.class);
-    private final MethodInterceptor advice = JobLog::run;
+    private final MethodInterceptor advice = this::run;
+    private final ObjectProvider<Telemetry> telemetry;
 
-    public JobLog() {
+    /** @param telemetry looked up at each run: an advisor is made before the beans it would need */
+    public JobLog(ObjectProvider<Telemetry> telemetry) {
+        this.telemetry = telemetry;
         // Outside ShedLock's lock, so a run another node took is seen as well.
         setOrder(Ordered.HIGHEST_PRECEDENCE);
     }
@@ -49,7 +54,7 @@ public class JobLog extends AbstractPointcutAdvisor {
         return advice;
     }
 
-    private static @Nullable Object run(MethodInvocation invocation) throws Throwable {
+    private @Nullable Object run(MethodInvocation invocation) throws Throwable {
         var method = invocation.getMethod();
         var job = method.getDeclaringClass().getSimpleName() + "." + method.getName();
         var startedAt = System.nanoTime();
@@ -57,13 +62,22 @@ public class JobLog extends AbstractPointcutAdvisor {
         try {
             var result = invocation.proceed();
             log.debug("Job {} finished in {}ms", job, millisSince(startedAt));
+            tell(job, startedAt, null);
             return result;
         } catch (Exception e) {
             // Not rethrown: the scheduler would only log it again, without the job's name.
             log.error("Job {} failed after {}ms", job, millisSince(startedAt), e);
+            tell(job, startedAt, e);
             return null;
         } finally {
             MDC.remove(JOB);
+        }
+    }
+
+    private void tell(String job, long startedAt, @Nullable Throwable failure) {
+        var current = telemetry.getIfAvailable();
+        if (current != null) {
+            current.job(job, millisSince(startedAt), failure);
         }
     }
 

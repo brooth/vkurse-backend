@@ -11,6 +11,7 @@ import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -28,10 +29,12 @@ import vkurse.core.logging.LogProperties;
 import vkurse.core.logging.UserLogFilter;
 import vkurse.core.notification.NotificationConfiguration;
 import vkurse.core.persistence.LockService;
+import vkurse.core.telemetry.Telemetry;
+import vkurse.core.telemetry.TelemetryConfiguration;
 
 /**
- * The beans a service gets by depending on this library: the error handler, the clock, cluster locks, logging of
- * requests, outside calls and jobs, and notifications. A service doesn't component-scan {@code vkurse.core}.
+ * The beans a service gets by depending on this library: the error handler, the clock, cluster locks, logging and
+ * telemetry of requests, outside calls and jobs, and notifications. A service doesn't component-scan {@code vkurse.core}.
  */
 @AutoConfiguration
 @EnableConfigurationProperties({CoreProperties.class, LogProperties.class})
@@ -43,7 +46,8 @@ import vkurse.core.persistence.LockService;
     HttpLogFilter.class,
     UserLogFilter.class,
     HttpClients.class,
-    NotificationConfiguration.class
+    NotificationConfiguration.class,
+    TelemetryConfiguration.class
 })
 public class CoreAutoConfiguration {
 
@@ -56,8 +60,8 @@ public class CoreAutoConfiguration {
     /** Names each scheduled job in the log. An infrastructure bean, like the other advisors (ShedLock's, transactions). */
     @Bean
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-    static JobLog jobLog() {
-        return new JobLog();
+    static JobLog jobLog(ObjectProvider<Telemetry> telemetry) {
+        return new JobLog(telemetry);
     }
 
     /**

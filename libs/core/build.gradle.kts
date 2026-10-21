@@ -2,7 +2,7 @@ plugins {
     `java-library`
 }
 
-description = "Vkurse shared library: errors, validation, aggregate base, token verification, money, notifications"
+description = "Vkurse shared library: errors, validation, aggregate base, token verification, money, notifications, telemetry"
 
 dependencies {
     api(platform("org.springframework.boot:spring-boot-dependencies:${libs.versions.spring.boot.get()}"))
@@ -14,6 +14,7 @@ dependencies {
     api(libs.spring.boot.starter.webmvc)
     api(libs.shedlock.spring)
     implementation(libs.shedlock.provider.jdbc.template)
+    implementation(libs.kafka.clients)
     implementation(libs.spring.boot.starter.mail)
     implementation(libs.spring.boot.starter.thymeleaf)
 

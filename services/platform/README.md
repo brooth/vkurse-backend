@@ -43,6 +43,7 @@ Resources: `application.yaml` (+ `-dev`, `-prod`), `db/migration/V{N}__{descript
 | `SPRING_PROFILES_ACTIVE` | no (`dev`) | `prod` in production (JSON logs) |
 | `PORT` | no (`8080`) | HTTP port |
 | `VKURSE_LOG_SQL` | no (`info`) | `debug` logs every SQL statement. More switches are in [Logs](#logs) |
+| `VKURSE_TELEMETRY_ENABLED`, `KAFKA_BOOTSTRAP_SERVERS` | no (`false`, `localhost:54392`) | Send request, job and node numbers to Kafka for the `monitoring` service; see [Telemetry](../../libs/core/README.md#telemetry). Off needs no Kafka |
 | `VKURSE_STORAGE_URL` | yes | Base URL of the Supabase Storage API as this service reaches it. Locally `http://127.0.0.1:54321`; behind the Supabase gateway it ends with `/storage/v1` |
 | `VKURSE_STORAGE_PUBLIC_URL` | yes | The same API as a browser reaches it: upload, download and public links start with it |
 | `VKURSE_STORAGE_SERVICE_KEY` | yes | Supabase service role key. `.env.example` has the published local demo key |

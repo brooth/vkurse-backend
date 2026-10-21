@@ -120,6 +120,11 @@ vkurse:
   web-url: ${VKURSE_WEB_URL}
   database:
     schema: platform
+  telemetry:
+    # Sends request, job and node numbers to Kafka for the `monitoring` service. Off: nothing is counted or sent.
+    enabled: ${VKURSE_TELEMETRY_ENABLED:false}
+    kafka:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:54392}
   storage:
     # Supabase Storage. `url` is how this service reaches it, `public-url` how a browser does.
     url: ${VKURSE_STORAGE_URL}

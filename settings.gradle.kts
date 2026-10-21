@@ -6,3 +6,4 @@ rootProject.name = "vkurse-backend"
 
 include("libs:core")
 include("services:platform")
+include("services:monitoring")
